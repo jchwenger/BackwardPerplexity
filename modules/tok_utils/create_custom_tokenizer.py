@@ -1,7 +1,15 @@
+"""
+    Contains the method necessary to train a Tokenizer with BPE.
+    Only work on a single .txt file. Should be no bigger than ~50 GB, to avoid
+    memory issues.
+    
+    File should contain regular spaces, otherwise it might crash with OOM error.
+"""
+
+
+
 import os
 from transformers import AutoTokenizer
-
-#==================== TEXT PATH ====================
 
 
 def read_in_chunks(file_path, chunk_size=10*1024*1024):  # Default chunk size is 10MB
@@ -66,6 +74,8 @@ def create_tokenizer(txt_path, save_directory = None, tokenizer_name=None, vocab
     """
         Creates a custom BPE huggingface tokenizer from a .txt file. The tokenizer is saved as a folder,
         and can be loaded with the helper function 'get_tokenizer(m_path=<tokenizer folder>)' from modules/tokenizer.py.
+        Needs quite a bit of memory, depending on dataset size.
+        If the data has no spaces, it will probably crash with out of memory error.
 
         Args :
         txt_path : Path to the .txt file to use for training the tokenizer.
@@ -79,10 +89,11 @@ def create_tokenizer(txt_path, save_directory = None, tokenizer_name=None, vocab
     if tokenizer_name is None:
         tokenizer_name = f'{os.path.basename(txt_path).split(".")[0]}_tokenizer'
 
-    toke_base = AutoTokenizer.from_pretrained('gpt2',use_fast=True)
-    # .txt dataset (full dataset in ht txt file, for now.)
-    toke_mine= toke_base.train_new_from_iterator(read_in_lines(txt_path),vocab_size=vocab_size)
-    toke_mine.save_pretrained(os.path.join(save_directory, tokenizer_name))
+    toke_base = AutoTokenizer.from_pretrained('gpt2',use_fast=True) # Load gpt2 tokenizer, to get same vocab_size and special tokens
+    # .txt dataset (full dataset in the txt file, for now.)
+    toke_mine= toke_base.train_new_from_iterator(read_in_lines(txt_path),vocab_size=vocab_size) # Train new tokenizer using BPE
+    toke_mine.save_pretrained(os.path.join(save_directory, tokenizer_name)) # Save the tokenizer
+
 
 if __name__=="__main__":
     txt_path = 'datavol/vi.txt'

@@ -32,5 +32,5 @@ def reverse_file_line_by_line(input_file, output_file):
             if current_line:
                 f_out.write(current_line[::-1])
 
-# Usage
+# USAGE
 reverse_file_line_by_line('jeff.txt', 'jeff_R.txt')

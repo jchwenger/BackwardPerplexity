@@ -10,8 +10,6 @@ from modules import get_tokenizer
 import os
 
 
-
-
 def txt_to_h5(txt_path, out_h5_folder, tokenizer_folder, tokenizer_name):
     """ 
         Given a .txt file located ALONE inside a folder, trains a BPE tokenizer on it. 
@@ -23,7 +21,7 @@ def txt_to_h5(txt_path, out_h5_folder, tokenizer_folder, tokenizer_name):
         The original .txt file will be saved inside a folder name <txt_path_folder>_backup
 
         Args:
-            txt_path (str): Path to the .txt file to be tokenized
+            txt_path (str): Path to the (single) .txt file to be tokenized
             out_h5_folder (str): Folder to the output .h5 file
             tokenizer_folder (str): Folder where the tokenizer will be saved
             tokenizer_name (str): Name of the tokenizer that will be saved
@@ -35,10 +33,10 @@ def txt_to_h5(txt_path, out_h5_folder, tokenizer_folder, tokenizer_name):
 
 
 if __name__=='__main__':
-    txt_path = '' # Path to the .txt file to be tokenized
-    out_h5_folder = 'h5data' #  Folder that will contain the output .h5 file
+    txt_path = 'shake/shakespeare.txt' # Path to the .txt file to be tokenized
+    out_h5_folder = 'h5datashake' #  Folder that will contain the output .h5 file
     tokenizer_folder = 'modules/tokenizers' # Folder where the tokenizer will be saved
-    tokenizer_name = '' # Name of the tokenizer that will be saved
+    tokenizer_name = 'shakespear' # Name of the tokenizer that will be saved
 
     ################## DO NOT MODIFY BELOW ##################
     txt_to_h5(txt_path, out_h5_folder, tokenizer_folder, tokenizer_name)

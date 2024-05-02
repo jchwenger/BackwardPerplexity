@@ -1,6 +1,5 @@
 """
-    Training script for GPT-like models. Same as train_script but allows for parallel training on multiple GPUs.
-    Not very optimized, prefer train_script.py for now.
+    NOT UPDATED TO LAST VERSION. TO USE, GO TO commit tagged 'PaperCode'
 """
 from modules import *
 import torch, torch.optim,os, argparse,json, pathlib,random, shutil

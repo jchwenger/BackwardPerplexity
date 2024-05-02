@@ -1,5 +1,8 @@
 """
+    NOT UPDATED TO LAST VERSION. TO USE, GO TO commit tagged 'PaperCode'
     Like train.py, but for the LSTM model. Usage is similar.
+
+
 """
 from modules import *
 import torch, torch.optim,os, argparse,json, pathlib,random, shutil

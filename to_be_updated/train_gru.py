@@ -1,4 +1,6 @@
 """
+    NOT UPDATED TO LAST VERSION. TO USE, GO TO commit tagged 'PaperCode'
+
     Like train_script.py, but for a GRU model. Usage is similar.
 """
 from modules import *

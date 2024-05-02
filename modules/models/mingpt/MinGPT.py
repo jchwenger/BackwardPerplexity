@@ -6,107 +6,9 @@ from torch.nn import functional as F
 from torchenhanced import ConfigModule,DevModule
 
 
-class CausalSelfAttention(DevModule):
-    """
-        Multi-head masked self-attention layer. Maybe in the future, benchmark against
-        native pytorch implementation to make sure its not too slow/memory hungry
-
-        Args :
-            embed_dim : number of embedding dimensions
-            n_heads : number of attention heads
-            attn_length : length of the attention window
-            dropout : (optional) dropout probability 
-    """
-
-    def __init__(self, embed_dim : int, n_heads :int, attn_length:int, dropout:float = 0.1):
-        super().__init__()
-        assert embed_dim % n_heads == 0, 'Number of heads {n_head} must divide embedding dim {n_embd}'
-        # key, query, value projections for all heads, but in a batch
-        self.c_attn = nn.Linear(embed_dim, 3 * embed_dim)
-
-        # output projection
-        self.c_proj = nn.Linear(embed_dim, embed_dim)
-
-        # regularization
-        self.attn_dropout = nn.Dropout(dropout)
-        self.resid_dropout = nn.Dropout(dropout)
-        # causal mask to ensure that attention is only applied to the left in the input sequence
-        self.register_buffer("bias", torch.tril(torch.ones(attn_length, attn_length))
-                                     .view(1, 1, attn_length, attn_length))
-        self.n_heads = n_heads
-        self.embed_dim = embed_dim
-
-    def forward(self, x):
-        B, T, C = x.size() # batch size, sequence length, embedding dimensionality (n_embd)
-
-        # calculate query, key, values for all heads in batch and move head forward to be the batch dim
-        q, k ,v  = self.c_attn(x).split(self.embed_dim, dim=2)
-        k = k.reshape(B, T, self.n_heads, C // self.n_heads).transpose(1, 2) # (B, nh, T, hs)
-        q = q.reshape(B, T, self.n_heads, C // self.n_heads).transpose(1, 2) # (B, nh, T, hs)
-        v = v.reshape(B, T, self.n_heads, C // self.n_heads).transpose(1, 2) # (B, nh, T, hs)
-
-        # causal self-attention; Self-attend: (B, nh, T, hs) x (B, nh, hs, T) -> (B, nh, T, T)
-        x = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))
-        x = x.masked_fill(self.bias[:,:,:T,:T] == 0, float('-inf'))
-        x = F.softmax(x, dim=-1)
-        x = self.attn_dropout(x)
-
-        x = x @ v # (B, nh, T, T) x (B, nh, T, hs) -> (B, nh, T, hs)
-        x = x.transpose(1, 2).contiguous().reshape(B, T, C) # re-assemble all head outputs side by side
-
-        # output projection
-        x = self.resid_dropout(self.c_proj(x))
-
-        return x
-
-
-class Block(DevModule):
-    """ 
-        One transformer block/layer, causal attention followed by a MLP.
-
-        Args :
-            embed_dim : number of embedding dimensions
-            n_heads : number of attention heads
-            attn_length : length of the attention window
-            mlp_ratio : ratio of mlp hidden dim to embedding dim
-            dropout : (optional) dropout probability
-    """
-
-    def __init__(self, embed_dim :int, n_heads:int,attn_length:int, mlp_ratio:float,dropout:float=0.1):
-        super().__init__()
-
-        self.ln_1 = nn.LayerNorm(embed_dim)
-        self.attn = CausalSelfAttention(embed_dim=embed_dim,n_heads=n_heads,attn_length=attn_length,dropout=dropout)
-        self.ln_2 = nn.LayerNorm(embed_dim)
-
-        self.mlp = nn.ModuleDict(dict(
-            c_fc    = nn.Linear(embed_dim, int(mlp_ratio * embed_dim)),
-            act     = nn.GELU(),
-            c_proj  = nn.Linear(int(mlp_ratio * embed_dim), embed_dim),
-            dropout = nn.Dropout(dropout),
-        ))
-        
-
-    def forward(self, x):
-        x = x + self.attn(self.ln_1(x))
-        x = x + self.mlp['dropout'](self.mlp['c_proj'](self.mlp['act'](self.mlp['c_fc'](self.ln_2(x)))))
-
-        return x
-
-
 class MinGPT(ConfigModule):
     """ 
         GPT Language Model.
-    
-        Args :
-        vocab_size : number of tokens in the vocabulary
-        n_layer : number of transformer layers
-        embed_dim : number of embedding dimensions
-        n_heads : number of attention heads, must divie embed_dim
-        attn_length : length of the attention window
-        mlp_ratio : ratio of mlp hidden dim to embedding dim
-        dropout : (optional) dropout probability
-        embd_dropout : (optional) dropout probability for the embedding layer
 
         For reference, here are some standard parameters
         # GPT-1
@@ -125,9 +27,21 @@ class MinGPT(ConfigModule):
 
     def __init__(self, vocab_size:int,n_layers:int,embed_dim :int, n_heads:int,attn_length:int, 
                  mlp_ratio:float=4,dropout:float=0.1, embd_dropout:float=None):
+        """
+            Args :
+                vocab_size : number of tokens in the vocabulary
+                n_layer : number of transformer layers
+                embed_dim : number of embedding dimensions
+                n_heads : number of attention heads, must divie embed_dim
+                attn_length : length of the attention window
+                mlp_ratio : ratio of mlp hidden dim to embedding dim
+                dropout : (optional) dropout probability
+                embd_dropout : (optional) dropout probability for the embedding layer
+                configo = dict(vocab_size=vocab_size,n_layers=n_layers,embed_dim=embed_dim,n_heads=n_heads,
+                            attn_length=attn_length,mlp_ratio=mlp_ratio,dropout=dropout,embd_dropout=embd_dropout)
+        """
         configo = dict(vocab_size=vocab_size,n_layers=n_layers,embed_dim=embed_dim,n_heads=n_heads,
-                       attn_length=attn_length,mlp_ratio=mlp_ratio,dropout=dropout,embd_dropout=embd_dropout)
-    
+                            attn_length=attn_length,mlp_ratio=mlp_ratio,dropout=dropout,embd_dropout=embd_dropout)
         super().__init__(configo)
 
         self.attn_length = attn_length
@@ -146,29 +60,8 @@ class MinGPT(ConfigModule):
         ))
         self.lm_head = nn.Linear(embed_dim, vocab_size, bias=False)
 
-        # restore if we actually do custom init
-        # self.apply(self._init_weights)
-        # for pn, p in self.named_parameters():
-        #     if pn.endswith('c_proj.weight'):
-        #         torch.nn.init.normal_(p, mean=0.0, std=0.02/math.sqrt(2 * n_layers))
-
         print("number of parameters: %.2fM" % (self.paranum/1e6,))
         print("Without head : %.2fM" % ((self.paranum-sum(p.numel() for p in self.lm_head.parameters()))/1e6))
-
-    def _init_weights(self, module):
-        """
-            This may need to be redefined, for now we run with the basic initialization
-        """
-        pass
-        # if isinstance(module, nn.Linear):
-        #     torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
-        #     if module.bias is not None:
-        #         torch.nn.init.zeros_(module.bias)
-        # elif isinstance(module, nn.Embedding):
-        #     torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
-        # elif isinstance(module, nn.LayerNorm):
-        #     torch.nn.init.zeros_(module.bias)
-        #     torch.nn.init.ones_(module.weight)
 
 
     def forward(self, idx)-> torch.Tensor:
@@ -262,3 +155,94 @@ class MinGPT(ConfigModule):
             _, idx_next = torch.topk(probs, k=1, dim=-1)
         # append sampled index to the running sequence and continue
         return idx_next
+
+
+
+class CausalSelfAttention(DevModule):
+    """
+        Multi-head masked self-attention layer. Maybe in the future, benchmark against
+        native pytorch implementation to make sure its not too slow/memory hungry
+
+        Args :
+            embed_dim : number of embedding dimensions
+            n_heads : number of attention heads
+            attn_length : length of the attention window
+            dropout : (optional) dropout probability 
+    """
+
+    def __init__(self, embed_dim : int, n_heads :int, attn_length:int, dropout:float = 0.1):
+        super().__init__()
+        assert embed_dim % n_heads == 0, 'Number of heads {n_head} must divide embedding dim {n_embd}'
+        # key, query, value projections for all heads, but in a batch
+        self.c_attn = nn.Linear(embed_dim, 3 * embed_dim)
+
+        # output projection
+        self.c_proj = nn.Linear(embed_dim, embed_dim)
+
+        # regularization
+        self.attn_dropout = nn.Dropout(dropout)
+        self.resid_dropout = nn.Dropout(dropout)
+        # causal mask to ensure that attention is only applied to the left in the input sequence
+        self.register_buffer("bias", torch.tril(torch.ones(attn_length, attn_length))
+                                     .view(1, 1, attn_length, attn_length))
+        self.n_heads = n_heads
+        self.embed_dim = embed_dim
+
+    def forward(self, x):
+        B, T, C = x.size() # batch size, sequence length, embedding dimensionality (n_embd)
+
+        # calculate query, key, values for all heads in batch and move head forward to be the batch dim
+        q, k ,v  = self.c_attn(x).split(self.embed_dim, dim=2)
+        k = k.reshape(B, T, self.n_heads, C // self.n_heads).transpose(1, 2) # (B, nh, T, hs)
+        q = q.reshape(B, T, self.n_heads, C // self.n_heads).transpose(1, 2) # (B, nh, T, hs)
+        v = v.reshape(B, T, self.n_heads, C // self.n_heads).transpose(1, 2) # (B, nh, T, hs)
+
+        # causal self-attention; Self-attend: (B, nh, T, hs) x (B, nh, hs, T) -> (B, nh, T, T)
+        x = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))
+        x = x.masked_fill(self.bias[:,:,:T,:T] == 0, float('-inf'))
+        x = F.softmax(x, dim=-1)
+        x = self.attn_dropout(x)
+
+        x = x @ v # (B, nh, T, T) x (B, nh, T, hs) -> (B, nh, T, hs)
+        x = x.transpose(1, 2).contiguous().reshape(B, T, C) # re-assemble all head outputs side by side
+
+        # output projection
+        x = self.resid_dropout(self.c_proj(x))
+
+        return x
+
+
+class Block(DevModule):
+    """ 
+        One transformer block/layer, causal attention followed by a MLP.
+
+        Args :
+            embed_dim : number of embedding dimensions
+            n_heads : number of attention heads
+            attn_length : length of the attention window
+            mlp_ratio : ratio of mlp hidden dim to embedding dim
+            dropout : (optional) dropout probability
+    """
+
+    def __init__(self, embed_dim :int, n_heads:int,attn_length:int, mlp_ratio:float,dropout:float=0.1):
+        super().__init__()
+
+        self.ln_1 = nn.LayerNorm(embed_dim)
+        self.attn = CausalSelfAttention(embed_dim=embed_dim,n_heads=n_heads,attn_length=attn_length,dropout=dropout)
+        self.ln_2 = nn.LayerNorm(embed_dim)
+
+        self.mlp = nn.ModuleDict(dict(
+            c_fc    = nn.Linear(embed_dim, int(mlp_ratio * embed_dim)),
+            act     = nn.GELU(),
+            c_proj  = nn.Linear(int(mlp_ratio * embed_dim), embed_dim),
+            dropout = nn.Dropout(dropout),
+        ))
+        
+
+    def forward(self, x):
+        x = x + self.attn(self.ln_1(x))
+        x = x + self.mlp['dropout'](self.mlp['c_proj'](self.mlp['act'](self.mlp['c_fc'](self.ln_2(x)))))
+
+        return x
+
+

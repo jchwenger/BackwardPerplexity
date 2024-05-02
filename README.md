@@ -30,15 +30,30 @@ Then run the script. NOTE : tokenization of large .txt files (>100GB) might take
 
 For more informations on these functions, look at docstring comments in `modules/tok_utils`
 
+### Tokenizer class
+The tokenizer class we use throughout the project is defined in `modules/tokenizer.py`. It is a wrapper on top of the Huggingface tokenizer.
+
+Here is all you need to know to use the tokenizers :
+
+```
+from modules import tokenizer
+
+toki = tokenizer.get_tokenizer(m_path='modules/tokenizers/en_tokenizer') # Load a saved tokenizer by specifying saved folder
+# A saved tokenizer is created by using create_tokenizer in modules/tok_utils/create_custom_tokenizer.py
+
+tokenized = toki.tokenize("Hello, world!") # Tokenize a string
+print(tokenized) # Get a tensor of ints shape [1, seq_len]
+print(toki.detokenize(tokenized)) # Detokenize a tensor of ints, prints "Hello, world!"
+```
 
 ## Training
 
 ### Scripts
 For training, 4 scripts are provided. All are designed to train models on the dataset generated with the above method.
-- `train_gru.py` : Trains GRU model.
-- `train_lstm.py` : Trains LSTM model.
-- `train_parallel.py` : Trains GPT model on multiple GPUs, using `torch.nn.Dataparallel`
-- `train_script.py` : Trains GPT model on a single GPU.
+- `train_gru.py` : Trains GRU model. (CURRENTLY UPDATING TO NEW VERSION OF TORCHENHANCED)
+- `train_lstm.py` : Trains LSTM model.(CURRENTLY UPDATING TO NEW VERSION OF TORCHENHANCED)
+- `train_parallel.py` : Trains GPT model on multiple GPUs, using `torch.nn.Dataparallel` (CURRENTLY UPDATING TO NEW VERSION OF TORCHENHANCED)
+- `train_script.py` : Trains GPT model on a single GPU. Up to date
 
 
 For all 4 scripts, usage is as follows :
@@ -52,16 +67,17 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   -d DEVICE, --device DEVICE
-                        Device string, e.g. 'cuda:0' or 'cpu'
+                Device string, e.g. 'cuda:0' or 'cpu'
   -t TOKENIZER_PATH, --tokenizer_path TOKENIZER_PATH
-                        Path for the tokenizer to use (only used for logging snippets). Relative to the train_script folder.
+                Path for the tokenizer to use (only used for logging snippets). Relative to the train_script folder.
   -p PROJECT_NAME, --project_name PROJECT_NAME
-                        Name of the project to log to. Default is 'BackPerplexityResilient'
-  -s, --no_step_pickup  If set, will train for steps_to_train more steps. Otherwise, will train up to steps_to_train steps (picking up where it left off)
+                Name of the project to log to. Default is 'BackPerplexityResilient'
+  -s, --no_step_pickup 
+                If set, train steps_to_train steps more. Otherwise, will train UP TO steps_to_train TOTAL steps."
   ```
 
 Example :
-`python train_script.py`
+`python train_script.py path/to/config.json -d cuda:0 -t path/to/tokenizer -p MyTrainingProject -s`
 ### JSON config file
 To run the training script, we need to provide it with a path to the JSON config file. Their format slightly depends if training a GPT, GRU or LSTM model. In a nutshell, they contain all the necessary hyperparameters for a training run.
 

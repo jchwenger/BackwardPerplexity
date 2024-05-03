@@ -1,7 +1,9 @@
 torch
 torchenhanced==0.3.0b2
 transformers
+datasets
 h5py
 opencv-python
 tqdm
 wandb
+rjsmin

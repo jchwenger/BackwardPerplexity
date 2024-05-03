@@ -7,6 +7,7 @@
 """
 from modules.tok_utils import create_tokenizer,make_h5,tokenize_folder
 from modules import get_tokenizer
+import argparse
 import os
 
 
@@ -33,10 +34,38 @@ def txt_to_h5(txt_path, out_h5_folder, tokenizer_folder, tokenizer_name):
 
 
 if __name__=='__main__':
-    txt_path = 'shake/shakespeare.txt' # Path to the .txt file to be tokenized
-    out_h5_folder = 'h5datashake' #  Folder that will contain the output .h5 file
-    tokenizer_folder = 'modules/tokenizers' # Folder where the tokenizer will be saved
-    tokenizer_name = 'shakespear' # Name of the tokenizer that will be saved
+
+    parser = argparse.ArgumentParser(
+        description="""
+        Script for preparing a .txt cc-100 dataset for training. Creates the
+        custom tokenizer, and tokenizes the text with it to generate the .h5
+        file for training.
+        To make one of those things independently (e.g., only make the custom
+        tokenizer), see modules/tok_utils
+        """
+    )
+
+    parser.add_argument(
+        "--txt_path", "-t",
+        type=str,
+        required=True,
+        help="""The input file to be tokenized. This script will save the
+        following items:
+        - a folder of the same name as the containing folder of txt_path, with
+        '_h5' append. Example: 'code_dataset/input.txt -> code_dataset_h5/
+        - a tokenizer in modules/tokenizers called after the folder containing
+        the txt dataset. example: 'code_dataset/input.txt ->
+        modules/tokenizers/code_dataset_tokenizer/
+        """,
+    )
+
+    args = parser.parse_args()
+
+    txt_folder = os.path.split(args.txt_path)[0]
+
+    out_h5_folder = f"{txt_folder}_h5" #  Folder that will contain the output .h5 file
+    tokenizer_folder = "modules/tokenizers" # Folder where the tokenizer will be saved
+    tokenizer_name = f"{txt_folder}_tokenizer" # Name of the tokenizer that will be saved
 
     ################## DO NOT MODIFY BELOW ##################
-    txt_to_h5(txt_path, out_h5_folder, tokenizer_folder, tokenizer_name)
+    txt_to_h5(args.txt_path, out_h5_folder, tokenizer_folder, tokenizer_name)

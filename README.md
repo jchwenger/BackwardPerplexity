@@ -14,13 +14,33 @@ The script `tokenize_to_h5.py` can be used to prepare a dataset for training. Gi
 CC100 datasets can be downloaded [here](https://data.statmt.org/cc-100/). 
 
 ### Usage :
-To use `tokenize_to_h5.py`, first put a standalone `.txt` file inside a folder. Then, inside `tokenize_to_h5.py`, modify the following :
+To use `tokenize_to_h5.py`, first put a standalone `.txt` file inside a folder. Then, use `tokenize_to_h5.py` using the following arguments
 ``` 
-if __name__=='__main__':
-    txt_path = '' # Path to the .txt file to be tokenized
-    out_h5_folder = '' #  Folder that will contain the output .h5 file
-    tokenizer_folder = '' # Folder where the tokenizer will be saved
-    tokenizer_name = '' # Name of the tokenizer that will be saved
+usage: tokenize_to_h5.py [-h] --txt_path TXT_PATH
+
+        Script for preparing a .txt cc-100 dataset for training. Creates the
+        custom tokenizer, and tokenizes the text with it to generate the .h5
+        file for training.
+
+        To make one of those things independently (e.g., only make the custom
+        tokenizer), see modules/tok_utils
+        
+
+options:
+  -h, --help            show this help message and exit
+  --txt_path TXT_PATH, -t TXT_PATH
+                        
+                                The input file to be tokenized. This script will save the following
+                                items:
+                                1) given the path of a source plain text file, a folder of the same
+                                name as the containing folder of txt_path, with '_h5' appended at the
+                                end, as well as raw Pytorch tensors and a backup. Example:
+                                    -t code_dataset/input.txt -> code_dataset_h5/code_dataset.h5
+                                                                 code_dataset_backup/input.txt
+                                                                 code_dataset/input_tokenized.pt
+                                2) a tokenizer in modules/tokenizers called after the folder containing
+                                the txt dataset. Example:
+                                    -t code_dataset/input.txt -> modules/tokenizers/code_dataset_tokenizer/
 ```
 
 Then run the script. NOTE : tokenization of large .txt files (>100GB) might take a while (1,2 days). This script is NOT designed to pick up where it left off if it crashes. For bigger datasets, consider making a script (include `from modules.tok_utils import *`), and run, subsequently :

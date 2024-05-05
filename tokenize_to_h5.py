@@ -40,22 +40,29 @@ if __name__=='__main__':
         Script for preparing a .txt cc-100 dataset for training. Creates the
         custom tokenizer, and tokenizes the text with it to generate the .h5
         file for training.
+
         To make one of those things independently (e.g., only make the custom
         tokenizer), see modules/tok_utils
-        """
+        """,
+        formatter_class=argparse.RawTextHelpFormatter,
     )
 
     parser.add_argument(
         "--txt_path", "-t",
         type=str,
         required=True,
-        help="""The input file to be tokenized. This script will save the
-        following items:
-        - a folder of the same name as the containing folder of txt_path, with
-        '_h5' append. Example: 'code_dataset/input.txt -> code_dataset_h5/
-        - a tokenizer in modules/tokenizers called after the folder containing
-        the txt dataset. example: 'code_dataset/input.txt ->
-        modules/tokenizers/code_dataset_tokenizer/
+        help="""
+        The input file to be tokenized. This script will save the following
+        items:
+        1) given the path of a source plain text file, a folder of the same
+        name as the containing folder of txt_path, with '_h5' appended at the
+        end, as well as raw Pytorch tensors and a backup. Example:
+            -t code_dataset/input.txt -> code_dataset_h5/code_dataset.h5
+                                         code_dataset_backup/input.txt
+                                         code_dataset/input_tokenized.pt
+        2) a tokenizer in modules/tokenizers called after the folder containing
+        the txt dataset. Example:
+            -t code_dataset/input.txt -> modules/tokenizers/code_dataset_tokenizer/
         """,
     )
 

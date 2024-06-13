@@ -109,8 +109,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--char_reverse", "-r",
-        default=False,
-        type=bool,
+        action="store_true",
         help="""Reverse order of all characters in the document""",
     )
 

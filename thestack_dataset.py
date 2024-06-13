@@ -5,6 +5,9 @@ import argparse
 from tqdm import tqdm
 from datasets import load_dataset
 
+def reverse(text):
+    return text[::-1]
+
 
 def query(url):
     response = requests.get(url, headers=headers)
@@ -31,6 +34,8 @@ def collect_dataset(
                 content = rjsmin.jsmin(content)
             if args.no_comments:
                 raise NotImplementedError
+            if args.char_reverse:
+                content = reverse(content)
             # Write content followed by a newline character to separate each entry
             o.write(content + "\n")
             if i == args.file_limit:  # Stop after collecting N rows
@@ -100,6 +105,13 @@ if __name__ == "__main__":
         Removes comments, using Comment Parser.
         https://pypi.org/project/comment-parser/
         """
+    )
+
+    parser.add_argument(
+        "--char_reverse", "-r",
+        default=False,
+        type=bool,
+        help="""Reverse order of all characters in the document""",
     )
 
     args = parser.parse_args()

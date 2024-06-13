@@ -123,6 +123,9 @@ if __name__ == "__main__":
     if args.no_comments:
         args.directory += "_no_comments"
 
+    if args.char_reverse:
+        args.directory += "_reversed"
+
     if not os.path.isdir(args.directory):
         print(f"{args.directory} folder not found, creating.")
         os.mkdir(args.directory)

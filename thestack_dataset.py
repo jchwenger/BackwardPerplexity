@@ -4,6 +4,7 @@ import requests
 import argparse
 from tqdm import tqdm
 from datasets import load_dataset
+import re
 
 def reverse(text):
     return text[::-1]
@@ -12,6 +13,12 @@ def reverse(text):
 def query(url):
     response = requests.get(url, headers=headers)
     return response.json()
+
+def remove_comments(code):
+    code = re.sub(r'//.*', '', code) #single-line
+    code = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL) #multi-line
+
+    return code
 
 
 def collect_dataset(
@@ -33,7 +40,7 @@ def collect_dataset(
             if args.minified and args.language == "javascript":
                 content = rjsmin.jsmin(content)
             if args.no_comments:
-                raise NotImplementedError
+                content = remove_comments(content)
             if args.char_reverse:
                 content = reverse(content)
             # Write content followed by a newline character to separate each entry
@@ -101,10 +108,7 @@ if __name__ == "__main__":
     cleaning_group.add_argument(
         "--no_comments", "-n",
         action="store_true",
-        help="""
-        Removes comments, using Comment Parser.
-        https://pypi.org/project/comment-parser/
-        """
+        help="""Removes code comments"""
     )
 
     parser.add_argument(

@@ -4,6 +4,7 @@ Full definition of a GPT Language Model.
 import math, torch, torch.nn as nn
 from torch.nn import functional as F
 from torchenhanced import ConfigModule,DevModule
+from tqdm import tqdm
 
 
 class MinGPT(ConfigModule):
@@ -112,7 +113,7 @@ class MinGPT(ConfigModule):
             (B,T) LongTensor of generated token indices. Must still be decoded by tokenizer.
         """
 
-        for _ in range(max_new_tokens):
+        for _ in tqdm(range(max_new_tokens)):
             idx_next = self.generate_next_token(idx,temperature=temperature,do_sample=do_sample,top_k=top_k)
 
             idx = torch.cat((idx, idx_next), dim=1)

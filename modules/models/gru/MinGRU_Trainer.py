@@ -14,15 +14,17 @@ class MinGRU_Trainer(Trainer):
                  detokenizer :Tokenizer=None, optim: Optimizer = None, scheduler: _LRScheduler = None, 
                  state_save_loc=None, device: str = 'cpu',parallel=None, run_name: str = None, project_name: str = None,
                  run_config: dict ={}):
-        super().__init__(model, optim, scheduler, save_loc=state_save_loc, device=device, parallel=parallel,
+        super().__init__(model, optim, scheduler, state_save_loc=state_save_loc, device=device, parallel=parallel,
                          run_name=run_name, project_name=project_name, run_config=run_config)
 
         self.train_dataset = train_dataset
         self.valid_dataset = valid_dataset
         # For logging :
+        self.batch_loss = []
+
         self.detokenizer= detokenizer
+
         self.backwards = backwards # In principle, extractable form dataset, but annoying because I use Subset, so I just give it.
-        self.text_table = wandb.Table(columns=["batches","text"])
 
         # Print number of parameters
         print(f"Number of parameters : {sum(p.numel() for p in self.model.parameters())/1e6:.2f}M")
@@ -31,6 +33,7 @@ class MinGRU_Trainer(Trainer):
         t_dataloader = DataLoader(self.train_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
         v_dataloader = DataLoader(self.valid_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
+        self.text_table = wandb.Table(columns=["batches","text"])
 
         return t_dataloader, v_dataloader
 
@@ -38,7 +41,7 @@ class MinGRU_Trainer(Trainer):
         # Check if correct, but should be :
         loss = self.compute_loss(batch_data)
         
-        if(self.do_step_log) :
+        if(self.do_batch_log) :
             wandb.log({'lr' : self.scheduler.get_last_lr()[0]},commit=False)
     
         return loss

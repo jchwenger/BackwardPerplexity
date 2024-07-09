@@ -1,8 +1,7 @@
 # BackPerplexity
 Investigate perplexity of LLM's when trained backward vs forward
 
-
-Code used for the Natural Language experiments of the paper 'Arrows of Time in Large Langugage Models'.
+Code for experimenting on the presence of an Arrow of Time in code.
 
 Install requirements using `pip install -r requirements.txt`.
 NOTE : On Windows, doing this might install torch without CUDA support. If this is the case, first install pytorch CUDA following instruction on the official [website](https://pytorch.org/), then run `pip install -r requirements.txt`.
@@ -13,6 +12,7 @@ Read the following section to learn how to reproduce experiments.
 The script `tokenize_to_h5.py` can be used to prepare a dataset for training. Given a .txt file, it will train a BPE tokenizer on it, then use it to tokenize the text, and save the tokenized dataset in `.h5` format.
 
 CC100 datasets can be downloaded [here](https://data.statmt.org/cc-100/). 
+
 ### Usage :
 To use `tokenize_to_h5.py`, first put a standalone `.txt` file inside a folder. Then, inside `tokenize_to_h5.py`, modify the following :
 ``` 
@@ -50,14 +50,14 @@ print(toki.detokenize(tokenized)) # Detokenize a tensor of ints, prints "Hello, 
 
 ### Scripts
 For training, 4 scripts are provided. All are designed to train models on the dataset generated with the above method.
-- `train_gru.py` : Trains GRU model. (CURRENTLY UPDATING TO NEW VERSION OF TORCHENHANCED)
-- `train_lstm.py` : Trains LSTM model.(CURRENTLY UPDATING TO NEW VERSION OF TORCHENHANCED)
-- `train_parallel.py` : Trains GPT model on multiple GPUs, using `torch.nn.Dataparallel` (CURRENTLY UPDATING TO NEW VERSION OF TORCHENHANCED)
-- `train_script.py` : Trains GPT model on a single GPU. Up to date
+- `train_gpt.py` : Trains GPT model on a single GPU.
+- `train_gru.py` : Trains GRU model. 
+- `train_lstm.py` : Trains LSTM model.
+- `train_parallel.py` : Trains GPT model on multiple GPUs, using `torch.nn.Dataparallel`
 
 
 For all 4 scripts, usage is as follows :
-```usage: train_script.py [-h] [-d DEVICE] [-t TOKENIZER_PATH] [-p PROJECT_NAME] [-s] file_location
+```usage: train_xxx.py [-h] [-d DEVICE] [-t TOKENIZER_PATH] [-p PROJECT_NAME] [-s] file_location
 
 Starts training of Predictor model given a JSON config file.
 
@@ -67,17 +67,18 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   -d DEVICE, --device DEVICE
-                Device string, e.g. 'cuda:0' or 'cpu'
+                Device string, e.g. 'cuda:0' or 'cpu'. For parallel, list of devices.
   -t TOKENIZER_PATH, --tokenizer_path TOKENIZER_PATH
-                Path for the tokenizer to use (only used for logging snippets). Relative to the train_script folder.
+                Path for the tokenizer to use (only used for logging snippets). Relative to the script folder.
   -p PROJECT_NAME, --project_name PROJECT_NAME
-                Name of the project to log to. Default is 'BackPerplexityResilient'
+                Name of the project to log to. 
   -s, --no_step_pickup 
                 If set, train steps_to_train steps more. Otherwise, will train UP TO steps_to_train TOTAL steps."
   ```
 
 Example :
 `python train_script.py path/to/config.json -d cuda:0 -t path/to/tokenizer -p MyTrainingProject -s`
+
 ### JSON config file
 To run the training script, we need to provide it with a path to the JSON config file. Their format slightly depends if training a GPT, GRU or LSTM model. In a nutshell, they contain all the necessary hyperparameters for a training run.
 

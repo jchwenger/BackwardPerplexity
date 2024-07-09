@@ -19,11 +19,12 @@ class MinGPT_Trainer(Trainer):
 
         self.train_dataset = train_dataset
         self.valid_dataset = valid_dataset
-
         # For logging :
+        self.batch_loss = []
+
         self.detokenizer= detokenizer
-        self.backwards = backwards # In principle I could extract this from train_dataset, but its annoying cuz made with subset, so just give it again
-        self.text_table = wandb.Table(columns=["batches","text"])
+
+        self.backwards = backwards # In principle, extractable form dataset, but annoying because I use Subset, so I just give it.
 
         # Print number of parameters
         print(f"Number of parameters : {sum(p.numel() for p in self.model.parameters())/1e6:.2f}M")
@@ -33,7 +34,7 @@ class MinGPT_Trainer(Trainer):
         t_dataloader = DataLoader(self.train_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
         v_dataloader = DataLoader(self.valid_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
-
+        self.text_table = wandb.Table(columns=["batches","text"])
 
         return t_dataloader, v_dataloader
 
@@ -42,7 +43,7 @@ class MinGPT_Trainer(Trainer):
         loss = self.compute_loss(batch_data)
         
         if(self.do_step_log) :
-            wandb.log({'lr' : self.scheduler.get_last_lr()[0]},commit=False)
+            self.logger.log({'lr' : self.scheduler.get_last_lr()[0]},commit=False)
     
         return loss
 
@@ -66,33 +67,27 @@ class MinGPT_Trainer(Trainer):
         loss = self.compute_loss(batch_data)
 
         return loss
-        
 
     def valid_log(self):
         """
             Log a snippet of generated text in a wandb Table
         """
-
         data, _ = self.valid_dataset[random.randint(0,len(self.valid_dataset)-1)] # (T,)*2
         data = data[:5].to(self.device) # only keep first 5 tokens, to start generating
-
         if(self.parallel_train):
             modello = self.model.module
         else:
             modello = self.model
-        
         # Generate some tokens
         phrase_out = modello.generate(data[None,:],max_new_tokens=100, do_sample=True).cpu() # (1, 5+300)
 
         # Decode the tokens, and if backwards, flip them back
         if(self.backwards):
-            phrase_out= self.detokenizer.detokenize(torch.flip(phrase_out,dims=[1]))
+            phrase_out= self.detokenizer.detokenize(torch.flip(phrase_out,dims=[1])) # ()
         else :
             phrase_out=self.detokenizer.detokenize(phrase_out)
 
-        # Add the data to the table
         self.text_table.add_data(f"{self.steps_done/1000:.1f}k",phrase_out) 
-
         # Fucking wandb... To update the table before end, need to re-create one each time
         new_table = wandb.Table(
         columns=self.text_table.columns, data=self.text_table.data

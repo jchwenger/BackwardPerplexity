@@ -2,7 +2,7 @@
     Contains the method necessary to train a Tokenizer with BPE.
     Only work on a single .txt file. Should be no bigger than ~50 GB, to avoid
     memory issues.
-    
+
     File should contain regular spaces, otherwise it might crash with OOM error.
 """
 
@@ -11,6 +11,14 @@
 import os
 from transformers import AutoTokenizer
 
+from tokenizers import decoders
+from tokenizers import tokenizer
+from tokenizers import processors
+from tokenizers.models import bpe
+from tokenizers import addedtoken
+from tokenizers import pre_tokenizers
+from tokenizers.trainers import bpetrainer
+from transformers import pretrainedtokenizerfast
 
 def read_in_chunks(file_path, chunk_size=10*1024*1024):  # Default chunk size is 10MB
     """
@@ -41,7 +49,7 @@ def read_in_lines(file_path, batch_size=512, phrase_size=2048):  # phrase_size i
         while not done:
             lines=[]
             newline=''
-            
+
             while (len(lines)<batch_size and not done):
                 while(len(newline)<=phrase_size):
                     #Read lines until we get something long enough
@@ -70,7 +78,7 @@ def read_in_lines(file_path, batch_size=512, phrase_size=2048):  # phrase_size i
             yield lines
 
 
-def create_tokenizer(txt_path, save_directory = None, tokenizer_name=None, vocab_size=50257):
+def create_tokenizer(txt_path, save_directory = None, tokenizer_name=None, vocab_size=50257, byte_level=False):
     """
         Creates a custom BPE huggingface tokenizer from a .txt file. The tokenizer is saved as a folder,
         and can be loaded with the helper function 'get_tokenizer(m_path=<tokenizer folder>)' from modules/tokenizer.py.
@@ -89,10 +97,59 @@ def create_tokenizer(txt_path, save_directory = None, tokenizer_name=None, vocab
     if tokenizer_name is None:
         tokenizer_name = f'{os.path.basename(txt_path).split(".")[0]}_tokenizer'
 
-    toke_base = AutoTokenizer.from_pretrained('gpt2',use_fast=True) # Load gpt2 tokenizer, to get same vocab_size and special tokens
-    # .txt dataset (full dataset in the txt file, for now.)
-    toke_mine= toke_base.train_new_from_iterator(read_in_lines(txt_path),vocab_size=vocab_size) # Train new tokenizer using BPE
-    toke_mine.save_pretrained(os.path.join(save_directory, tokenizer_name)) # Save the tokenizer
+    if byte_level:
+        # to disable the GPT2 regex, build the pipeline from scratch
+        # https://huggingface.co/docs/tokenizers/en/api/models#tokenizers.models.BPE
+        bpe = BPE( # args copied over from AutoTokenizer's default GPT-2 json config
+            fuse_unk = False,
+            byte_fallback = False,
+        )
+        toke_base = Tokenizer(bpe)
+
+        # Pre-Tokenizer: no GPT2 regex!
+        toke_base.pre_tokenizer = pre_tokenizers.ByteLevel(
+            add_prefix_space = False,
+            use_regex = False
+            # trim_offsets = True, # no args but in json?
+        )
+
+        # Processor
+        toke_base.post_processor = processors.ByteLevel(
+            trim_offsets = False,
+            # add_prefix_space = True, # no args but in json?
+            # use_regex = False
+        )
+
+        # Decoder
+        toke_base.decoder = decoders.ByteLevel(
+            # add_prefix_space = True, # no args but in json?
+            # trim_offsets = False,
+            # use_regex = False
+        )
+
+        special = AddedToken("<|endoftext|>", normalized = True)
+        trainer = BpeTrainer(vocab_size = vocab_size, special_tokens = [special])
+        toke_base.train_from_iterator(read_in_lines(txt_path), trainer = trainer)
+
+        toke_base.add_special_tokens([special])
+
+        print(f"saving tokenizer to: {os.path.join(save_directory, tokenizer_name, 'tokenizer.json')}")
+        # toke_base.save(os.path.join(save_directory, tokenizer_name, 'tokenizer.json')) # Save the tokenizer
+        tok_fast = PreTrainedTokenizerFast(
+            tokenizer_object=toke_base,
+            model_max_length=1024,
+            bos_token="<|endoftext|>",
+            eos_token="<|endoftext|>",
+            unk_token="<|endoftext|>",
+        )
+        tok_fast.save_pretrained(os.path.join(save_directory, tokenizer_name)) # Save the tokenizer
+
+    else:
+        toke_base = AutoTokenizer.from_pretrained('gpt2',use_fast=True) # Load gpt2 tokenizer, to get same vocab_size and special tokens
+        # .txt dataset (full dataset in the txt file, for now.)
+        # toke_mine = toke_base.train_new_from_iterator(read_in_lines(txt_path),vocab_size=vocab_size) # Train new tokenizer using BPE
+        toke_mine = toke_base
+        toke_mine.save_pretrained(os.path.join(save_directory, tokenizer_name)) # Save the tokenizer
 
 
 if __name__=="__main__":

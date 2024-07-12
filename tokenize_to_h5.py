@@ -11,10 +11,10 @@ import argparse
 import os
 
 
-def txt_to_h5(txt_path, out_h5_folder, tokenizer_folder, tokenizer_name):
-    """ 
-        Given a .txt file located ALONE inside a folder, trains a BPE tokenizer on it. 
-        Then, tokenizes the .txt file, and save the result as a an .h5 file, which can be used to 
+def txt_to_h5(txt_path, out_h5_folder, tokenizer_folder, tokenizer_name, byte_level):
+    """
+        Given a .txt file located ALONE inside a folder, trains a BPE tokenizer on it.
+        Then, tokenizes the .txt file, and save the result as a an .h5 file, which can be used to
         make a TokenTextBOS dataset. NOTE: There are NO checkpoints, if it crashes
         at any point, you have to start over. To avoid this, use instead the functions
         'create_tokenizer', 'tokenize_folder' and 'make_h5' separately.
@@ -27,7 +27,7 @@ def txt_to_h5(txt_path, out_h5_folder, tokenizer_folder, tokenizer_name):
             tokenizer_folder (str): Folder where the tokenizer will be saved
             tokenizer_name (str): Name of the tokenizer that will be saved
     """
-    create_tokenizer(txt_path, tokenizer_folder,tokenizer_name=tokenizer_name)
+    create_tokenizer(txt_path, tokenizer_folder,tokenizer_name=tokenizer_name, byte_level=byte_level)
     tokenize_folder(os.path.dirname(txt_path), os.path.join(tokenizer_folder,tokenizer_name))
     toki = get_tokenizer(m_path=os.path.join(tokenizer_folder,tokenizer_name))
     make_h5(os.path.dirname(txt_path), out_h5_folder,toki)
@@ -66,6 +66,15 @@ if __name__=='__main__':
         """,
     )
 
+    parser.add_argument(
+        "--byte_level", "-b",
+        action="store_true",
+        help="""
+        When training a new tokenizer, split the dataset on bytes before
+        applying pre-tokenization (default: use the GPT2 regex).
+        """
+    )
+
     args = parser.parse_args()
 
     txt_folder = os.path.split(args.txt_path)[0]
@@ -75,4 +84,4 @@ if __name__=='__main__':
     tokenizer_name = f"{txt_folder}_tokenizer" # Name of the tokenizer that will be saved
 
     ################## DO NOT MODIFY BELOW ##################
-    txt_to_h5(args.txt_path, out_h5_folder, tokenizer_folder, tokenizer_name)
+    txt_to_h5(args.txt_path, out_h5_folder, tokenizer_folder, tokenizer_name, args.byte_level)

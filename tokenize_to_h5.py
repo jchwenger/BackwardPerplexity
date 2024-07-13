@@ -5,10 +5,15 @@
 
     To make one of those things independently (e.g., only make the custom tokenizer), see modules/tok_utils
 """
-from modules.tok_utils import create_tokenizer,make_h5,tokenize_folder
-from modules import get_tokenizer
-import argparse
+
 import os
+import argparse
+
+from modules.tok_utils import make_h5
+from modules.tok_utils import tokenize_folder
+from modules.tok_utils import create_tokenizer
+
+from modules import get_tokenizer
 
 
 def txt_to_h5(txt_path, out_h5_folder, tokenizer_folder, tokenizer_name):

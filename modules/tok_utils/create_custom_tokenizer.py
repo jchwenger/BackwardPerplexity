@@ -6,9 +6,8 @@
     File should contain regular spaces, otherwise it might crash with OOM error.
 """
 
-
-
 import os
+
 from transformers import AutoTokenizer
 
 

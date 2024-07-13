@@ -7,8 +7,9 @@
 
     Note : uses wandb, so you need to have a wandb account and be logged in.
 """
-from modules import *
+
 import argparse
+
 from train import train
 
 if __name__=='__main__':

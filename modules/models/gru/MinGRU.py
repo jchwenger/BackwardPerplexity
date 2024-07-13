@@ -1,9 +1,15 @@
 """
 Full definition of a GPT Language Model.
 """
-import math, torch, torch.nn as nn
+
+import math
+
+import torch
+import torch.nn as nn
 from torch.nn import functional as F
-from torchenhanced import ConfigModule,DevModule
+
+from torchenhanced import DevModule
+from torchenhanced import ConfigModule
 
 
 class MinGRU(ConfigModule):

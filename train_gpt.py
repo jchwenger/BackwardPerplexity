@@ -8,8 +8,9 @@
     Note : uses wandb, so you need to have a wandb account and be logged in.
 """
 
-from train import train
 import argparse
+
+from train import train
 
 
 

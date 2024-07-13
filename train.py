@@ -1,11 +1,24 @@
 """
     Base training function for language models. 
 """
-from modules import *
-import torch, torch.optim,os, argparse,json, pathlib,random, shutil
-from torch.utils.data import Subset
-from torchenhanced import CosineWarmup
+
+import os
+import json
+import shutil
+import pathlib
+
 import numpy as np
+
+import torch
+import torch.optim
+from torch.utils.data import Subset
+
+from modules import load_model
+from modules import load_trainer
+from modules import TokenTextBOS as TokenTextBOS
+from modules import get_tokenizer
+
+from torchenhanced import CosineWarmup
 
 
 def train(model_name : str, file_location : str, device : str | list[str], tokenizer_path : str ,
@@ -41,7 +54,7 @@ def train(model_name : str, file_location : str, device : str | list[str], token
             training_params = configo['training_params']
             optim_params = configo['optim_params']
     except Exception as e:
-        print(f'Error reading JSON file !')
+        print('Error reading JSON file !')
         raise(e)
 
     if not os.path.exists(training_params['dataset_folder']):
@@ -98,10 +111,10 @@ def train(model_name : str, file_location : str, device : str | list[str], token
     val_dataset = Subset(motherDataset, val_range)
 
     print('Datapoint example. Check it looks correct ! : ')
-    print(f'TRAIN DATA   :',tokenizer.detokenize(train_dataset[0][0][:20]))
-    print(f'TRAIN ANSWER : ',tokenizer.detokenize(train_dataset[0][1][:20]))
-    print(f'VALID DATA   :',tokenizer.detokenize(val_dataset[0][0][:20]))
-    print(f'VALID ANSWER : ',tokenizer.detokenize(val_dataset[0][1][:20]))
+    print('TRAIN DATA   :',tokenizer.detokenize(train_dataset[0][0][:20]))
+    print('TRAIN ANSWER : ',tokenizer.detokenize(train_dataset[0][1][:20]))
+    print('VALID DATA   :',tokenizer.detokenize(val_dataset[0][0][:20]))
+    print('VALID ANSWER : ',tokenizer.detokenize(val_dataset[0][1][:20]))
     
     model = load_model(model_name, model_params)
 
@@ -110,7 +123,7 @@ def train(model_name : str, file_location : str, device : str | list[str], token
     aggregate = training_params['aggregate']
     totbatches = len(train_dataset)//batch_size
     
-    if(training_params['steps_to_train']==None):
+    if(training_params['steps_to_train'] is None):
         steps_to_train = totbatches*4
     else:
         steps_to_train = training_params['steps_to_train']

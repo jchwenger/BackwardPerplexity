@@ -13,9 +13,16 @@
     and can optionally skip preprocessing steps based on the command line arguments.
 
 """
-from modules import tokenizer
-import  os, torch, argparse, shutil,pathlib
+
+import os
+import shutil
+import pathlib
+import argparse
 from tqdm import tqdm
+
+import torch
+
+from modules import tokenizer
 
 MAX_SIZE = 2*1024*1024*1024 
 

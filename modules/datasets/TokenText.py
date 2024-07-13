@@ -1,6 +1,9 @@
-from torch.utils.data import Dataset
-import torch,os, h5py
+import os
+import h5py
 import numpy as np
+
+import torch
+from torch.utils.data import Dataset
 
 
 class TokenTexth5(Dataset):
@@ -21,7 +24,7 @@ class TokenTexth5(Dataset):
 
         self.backwards = backwards
 
-        
+
         if(stride is None):
             self.stride=self.attn_length//2
         else :
@@ -29,14 +32,14 @@ class TokenTexth5(Dataset):
 
         if(not os.path.isfile(self.h5_file)):
             raise ValueError(f'File/Folder {self.h5_file} not found')
-        
+
         self.h5_file = h5py.File(self.h5_file, 'r')
         self.text_tensor = self.h5_file['tokens']
 
 
         self.num_tokens = len(self.text_tensor)
         self.length = (self.num_tokens-self.attn_length-1)//(self.stride) # -1 because we need to have a target for each input
-    
+
         print(f'Dataset contains {self.num_tokens/1e6:.2f}M tokens, resulting in {self.length//1000}k examples.')
 
     def __len__(self):
@@ -80,7 +83,7 @@ class TokenTextBOS(Dataset):
         # attn_length is actually the length of the text that is produced. Adding the BOS, we get sentences of length attn_length+1
         self.backwards = backwards
 
-        
+
         if(stride is None):
             self.stride=self.attn_length//2
         else :
@@ -88,7 +91,7 @@ class TokenTextBOS(Dataset):
 
         if(not os.path.isfile(self.h5_file)):
             raise ValueError(f'File/Folder {self.h5_file} not found')
-        
+
         self.h5_file = h5py.File(self.h5_file, 'r')
         self.text_tensor = self.h5_file['tokens']
 
@@ -125,4 +128,4 @@ class TokenTextBOS(Dataset):
             tens : tensor of shape (attn_length)
         """
         return torch.cat([torch.tensor([0],dtype=torch.long),tens],dim=0) # (attn_length+1)
-    
+

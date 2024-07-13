@@ -1,9 +1,15 @@
-import torch, torch.nn.functional as F
-from torch.optim.lr_scheduler import _LRScheduler
+import wandb
+import random
+
+import torch
+import torch.nn.functional as F
+
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
-import wandb, random
+from torch.optim.lr_scheduler import _LRScheduler
+
 from torchenhanced import Trainer
+
 from .MinGPT import MinGPT
 from ...datasets import TokenText
 from ...tokenizer import Tokenizer

@@ -1,6 +1,10 @@
-import h5py , os, torch
-from pathlib import Path
+import os
+import h5py
 from tqdm import tqdm
+from pathlib import Path
+
+import torch
+
 from transformers import AutoTokenizer
 
 def make_h5(pt_data_folder, dataset_fname = 'dataset.h5', destination_folder = None, view_tokenizer : AutoTokenizer = None):

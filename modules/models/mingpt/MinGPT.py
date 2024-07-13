@@ -1,10 +1,16 @@
 """
 Full definition of a GPT Language Model.
 """
-import math, torch, torch.nn as nn
-from torch.nn import functional as F
-from torchenhanced import ConfigModule,DevModule
+
+import math
 from tqdm import tqdm
+
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+from torchenhanced import DevModule
+from torchenhanced import ConfigModule
 
 
 class MinGPT(ConfigModule):

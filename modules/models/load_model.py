@@ -1,5 +1,9 @@
-from .gru import MinGRU,MinLSTM, MinGRU_Trainer
-from .mingpt import MinGPT, MinGPT_Trainer
+from .gru import MinGRU
+from .gru import MinLSTM
+from .gru import MinGRU_Trainer
+
+from .mingpt import MinGPT
+from .mingpt import MinGPT_Trainer
 
 def load_model(model_name:str, model_config:dict):
     """

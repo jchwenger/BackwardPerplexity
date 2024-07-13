@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
-import os, pathlib, sys, gc
+
+import os
+import sys
 import json
-import numpy as np, torch
+import pathlib
 from tqdm import tqdm
-from transformers import AutoTokenizer, logging 
-from pathlib import Path
+
+import torch
+
+from transformers import logging
+from transformers import AutoTokenizer
 
 logging.set_verbosity_error() # needed to stop the stupid warning messages
 

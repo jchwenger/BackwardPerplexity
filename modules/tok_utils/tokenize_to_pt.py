@@ -41,7 +41,7 @@ def main_replace_unusual(folder_path):
 
                 # print(f"Replaced terminators in {filename}")
 
-def split_file(filename):
+def split_file(filename, split_dir):
     """Split a file into multiple 500MB parts while ensuring split occurs at a newline."""
     print(f'Splitting {filename}')
     part_size = MAX_SIZE  # 500MB
@@ -67,24 +67,28 @@ def split_file(filename):
                 data += source.read(1024*4)  # Read the entire peeked buffer since no newline was found
 
 
-            part_file = f"{filename[:-4]}_{part_num:04}.txt"
+            # part_file = f"{filename[:-4]}_{part_num:04}.txt"
+            part_file = os.path.join(
+                split_dir, os.path.splitext(os.path.basename(filename))[0], f"_{part_num:04}.txt"
+            )
             with open(part_file, 'wb') as target:
                 target.write(data)
-            print(f'Splitted {part_num*MAX_SIZE/1e9}GB so far')
+            print(f'Split {part_num*MAX_SIZE/1e9}GB so far')
             part_num += 1
             
 
-def main_split_large(folder_path):
+def main_split_large(folder_path, target_path):
     """
         Use split_file on a folder containing big .txt files.
         Backs up the un-split text.
 
         Args:
         folder_path : Path to the folder containing the .txt files to split.
+        target_path : Path to the folder that will contain the splits (created
+            if needed).
     """
     folder_name = os.path.basename(os.path.normpath(folder_path))
-    backup_dir = os.path.join(folder_path,'..',f'{folder_name}_backup')
-    os.makedirs(backup_dir, exist_ok=True)
+    os.makedirs(target_path, exist_ok=True)
 
     for filename in os.listdir(folder_path):
         print(f'Scanning and splitting {os.path.join(folder_path,filename)}')
@@ -92,12 +96,11 @@ def main_split_large(folder_path):
         if filename.endswith('.txt'):
             filepath = os.path.join(folder_path, filename)
             if os.path.getsize(filepath) > MAX_SIZE+64*1024:
-                split_file(filepath)
-                # Move original file to backup folder
-                shutil.move(filepath, backup_dir)
+                # Split file to target folder
+                split_file(filepath, target_path)
             else:
-                # Copy original file to backup folder
-                shutil.copy(filepath, backup_dir)
+                # Copy original file to split folder
+                shutil.copy(filepath, target_path)
             
             
 
@@ -107,7 +110,8 @@ def tokenize_folder(folder_path, tokenizer_path=None, no_preprocess=False):
         Pipeline for tokenizing text in a folder. Is NOT recursive, will
         act only on .txt files contained in folder_path.
 
-        Save the tensors containing the tokens into .pt files.
+        Save the tensors containing the tokens as .pt files in a folder named
+        `folder_path`_pt (appending "_pt").
         Each .pt file contains a tensor of shape [1, n_tokens], which
         can be loaded with torch.load if needed.
         
@@ -127,19 +131,20 @@ def tokenize_folder(folder_path, tokenizer_path=None, no_preprocess=False):
 
     toki = tokenizer.get_tokenizer(m_path=tokenizer_path,m_name=tokenizer_name)
 
+    target_path = f"{folder_path}_pt"
+
     if(not no_preprocess):
         # Only do if no_preprocess is false
-        main_split_large(folder_path)# First split into MAX-SIZE files
+        main_split_large(folder_path, target_path)# First split into MAX-SIZE files
         # Then remove strange terminators
-        main_replace_unusual(folder_path)
-
+        main_replace_unusual(target_path)
 
     # Then run the tokenizer on the MAX_SIZE txt files : 
-    for txtfile in os.listdir(folder_path):
+    for txtfile in os.listdir(target_path):
         if(txtfile.endswith('.txt')):
-            toki.tokenize_txt_file_to_pt_file(os.path.join(folder_path,txtfile), f'{os.path.join(folder_path,txtfile[:-4])}_tokenized.pt', dtype=torch.int32)
+            toki.tokenize_txt_file_to_pt_file(os.path.join(target_path,txtfile), f'{os.path.join(target_path,txtfile[:-4])}_tokenized.pt', dtype=torch.int32)
             # Delete the txt files once done, they are backed-up anyway
-            os.remove(os.path.join(folder_path,txtfile))
+            os.remove(os.path.join(target_path,txtfile))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Split large txt files in a directory.")

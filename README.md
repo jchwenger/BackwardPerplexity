@@ -34,19 +34,18 @@ options:
                                 items:
                                 1) given the path of a source plain text file, a folder of the same
                                 name as the containing folder of txt_path, with '_h5' appended at the
-                                end, as well as raw Pytorch tensors and a backup. Example:
-                                    -t code_dataset/input.txt -> code_dataset_h5/code_dataset.h5
-                                                                 code_dataset_backup/input.txt
-                                                                 code_dataset/input_tokenized.pt
+                                end, as well as raw Pytorch tensors. Example:
+                                    -t my_dataset/input.txt -> my_dataset_h5/input.h5
+                                                               my_dataset_pt/input_tokenized.pt
                                 2) a tokenizer in modules/tokenizers called after the folder containing
                                 the txt dataset. Example:
-                                    -t code_dataset/input.txt -> modules/tokenizers/code_dataset_tokenizer/
+                                    -t my_dataset/input.txt -> modules/tokenizers/code_dataset_tokenizer/
 ```
 
 Then run the script. NOTE : tokenization of large .txt files (>100GB) might take a while (1,2 days). This script is NOT designed to pick up where it left off if it crashes. For bigger datasets, consider making a script (include `from modules.tok_utils import *`), and run, subsequently :
     - `create_tokenizer(txt_path, tokenizer_folder,tokenizer_name=tokenizer_name)` : Will train the BPE tokenizer on the given .txt file, and save it in <tokenizer_folder>/<tokenizer_name>
     - `tokenize_folder(os.path.dirname(txt_path), os.path.join(tokenizer_folder,tokenizer_name))` : Will tokenize the text file, splitting it into subfiles if necessary for memory reasons. Saved the tokenized tensors as `.pt`. If it crashes mid-way, can be restarted, and will pickup from last checkpoint
-    - `make_h5(os.path.dirname(txt_path), out_h5_folder,toki)` : Will convert a folder containing `.pt` files into a single `.h5` dataset, ready for training.
+    - `make_h5(os.path.dirname(txt_path), os.path.splitext(os.path.basename(txt_path))[0], out_h5_folder,toki)` : Will convert a folder containing `.pt` files into a single `.h5` dataset, ready for training.
 
 For more informations on these functions, look at docstring comments in `modules/tok_utils`
 

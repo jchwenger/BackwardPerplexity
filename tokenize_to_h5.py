@@ -30,7 +30,7 @@ def txt_to_h5(txt_path, out_h5_folder, tokenizer_folder, tokenizer_name):
     create_tokenizer(txt_path, tokenizer_folder,tokenizer_name=tokenizer_name)
     tokenize_folder(os.path.dirname(txt_path), os.path.join(tokenizer_folder,tokenizer_name))
     toki = get_tokenizer(m_path=os.path.join(tokenizer_folder,tokenizer_name))
-    make_h5(os.path.dirname(txt_path), out_h5_folder,toki)
+    make_h5(os.path.dirname(txt_path), os.path.splitext(os.path.basename(txt_path))[0], out_h5_folder,toki)
 
 
 if __name__=='__main__':
@@ -42,7 +42,7 @@ if __name__=='__main__':
         file for training.
 
         To make one of those things independently (e.g., only make the custom
-        tokenizer), see modules/tok_utils
+        tokenizer), see modules/tok_utils.
         """,
         formatter_class=argparse.RawTextHelpFormatter,
     )
@@ -56,10 +56,9 @@ if __name__=='__main__':
         items:
         1) given the path of a source plain text file, a folder of the same
         name as the containing folder of txt_path, with '_h5' appended at the
-        end, as well as raw Pytorch tensors and a backup. Example:
-            -t code_dataset/input.txt -> code_dataset_h5/code_dataset.h5
-                                         code_dataset_backup/input.txt
-                                         code_dataset/input_tokenized.pt
+        end, as well as raw Pytorch tensors. Example:
+            -t my_dataset/input.txt -> my_dataset_h5/input.h5
+                                       my_dataset_pt/input_tokenized.pt
         2) a tokenizer in modules/tokenizers called after the folder containing
         the txt dataset. Example:
             -t code_dataset/input.txt -> modules/tokenizers/code_dataset_tokenizer/

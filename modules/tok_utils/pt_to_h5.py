@@ -3,14 +3,19 @@ from pathlib import Path
 from tqdm import tqdm
 from transformers import AutoTokenizer
 
-def make_h5(pt_data_folder, destination_folder = None, view_tokenizer : AutoTokenizer = None):
+def make_h5(pt_data_folder, dataset_fname = 'dataset.h5', destination_folder = None, view_tokenizer : AutoTokenizer = None):
     """
-        Takes a folder of .pt files, and converts them to a single .h5 file.
+    Takes a folder of .pt files, and converts them to a single .h5 file.
 
-        Args:
-            pt_data_folder : Path to the folder containing the .pt files. Can be relative or absolute.
-            destination_folder : Path to the folder where the .h5 file will be saved. Can be relative or absolute.
-            view_tokenizer : A tokenizer to use for viewing dataset snippets during conversion. If None, will use the GPT2 tokenizer.
+    Args:
+        pt_data_folder : Path to the folder containing the .pt files. Can be
+            relative or absolute.
+        dataset_fname : Name of the dataset file. Defaults to `dataset.h5`
+            ('.h5' will automatically be added at the end if missing).
+        destination_folder : Path to the folder where the .h5 file will be
+            saved. Can be relative or absolute.
+        view_tokenizer : A tokenizer to use for viewing dataset snippets
+            during conversion. If None, will use the GPT2 tokenizer.
     """
 
     if(view_tokenizer is None):
@@ -19,9 +24,10 @@ def make_h5(pt_data_folder, destination_folder = None, view_tokenizer : AutoToke
     if(destination_folder is None):
         destination_folder= Path(__file__).parent.as_posix()
     
-    tarname = os.path.join(destination_folder,f'{os.path.basename(pt_data_folder)}.h5')
-    os.makedirs(os.path.dirname(tarname),exist_ok=True)
+    if not dataset_fname.endswith('.h5') : dataset_fname = f"{dataset_fname}.h5"
 
+    tarname = os.path.join(destination_folder, dataset_fname)
+    os.makedirs(os.path.dirname(tarname),exist_ok=True)
 
     if(os.path.isdir(pt_data_folder)):
         with h5py.File(tarname, 'w') as f:

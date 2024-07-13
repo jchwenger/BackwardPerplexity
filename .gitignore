@@ -1,6 +1,24 @@
-*.pt
-.DS_Store
-__pycache__
+# Training & data
 wandb
 runs
 datavol
+
+# Python
+__pycache__
+.ipynb_checkpoints
+
+# PyTorch
+*.pt
+
+# MacOS
+.DS_Store
+
+# Vim
+*.sw*
+
+# Python env
+venv
+env
+
+# CTags
+tags

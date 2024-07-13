@@ -27,7 +27,7 @@ def first_not_none(* args): return None if len(args) == 0 else args[0] if args[0
 def multiget(d, vals): return [d.get(val) for val in vals]
 def remove_none_vals(d): return { k:d[k] for k in d if d[k] is not None }
 
-def put_and_return(d, k, v): return d.update({k : v}) or v 
+def put_and_return(d, k, v): return d.update({k : v}) or v
 
 def is_file(file_path): return os.path.isfile(file_path)
 def are_files(*file_paths): return all([is_file(file_path) for file_path in file_paths])
@@ -47,9 +47,9 @@ def save_string(string, file_path):
 
 def load_json(file_path): return json.loads(load_string(file_path))
 def save_json(obj, file_path): save_string(json.dumps(obj), file_path) or obj
-def load_torch(file_path, *, device=None, **params): 
+def load_torch(file_path, *, device=None, **params):
     return torch.load(file_path, map_location=(device if device is not None else 'cpu'), **params) # wrapper to unify notation
-def save_torch(obj, file_path, *, replace=True, **params): 
+def save_torch(obj, file_path, *, replace=True, **params):
     if not is_file(file_path) or replace: return torch.save(obj, file_path, **params) or obj # wrapper to unify notation
     else: return obj
 
@@ -65,12 +65,13 @@ class Tokenizer:
     """ The base class for the tokenizers """
     def __init__(self): self.vs = 1
     def tokenize(self, s, **params): pass # tokenizes a string into a batched tensor [1, t], t = num tokens of s
-    def detokenize(self, tokens, *, join=True): 
+    def detokenize(self, tokens, *, join=True):
         """
-            Converts a pytorch tensor of tokens into a string or a list of strings
-            Arguments:
-                tokens: size [t] or size [b, t] (in the latter case, will be converted to [b * t])
-                join: whether to put the tokens together in a string or leave them as a list of words
+        Converts a pytorch tensor of tokens into a string or a list of strings
+
+        Arg:
+            tokens: size [t] or size [b, t] (in the latter case, will be converted to [b * t])
+            join: whether to put the tokens together in a string or leave them as a list of words
         """
         pass # detokenizes a pytorch tensor into a string
     def tokenize_txt_to_pt(self, txt, *, add_if_unknown=False, dtype=None):
@@ -83,16 +84,16 @@ class Tokenizer:
         # Splitting the text into chunks
         chunk_size = 1*1024*1024 # 10M tokens chunk size
         chunks = [txt[i:i+chunk_size] for i in range(0, len(txt), chunk_size)]
-        
+
         tokenized_chunks = []
         print('Tokenizing... ')
         for chunk in tqdm(chunks):
             tokens = self.tokenize(chunk, add_if_unknown=add_if_unknown)
             if dtype is not None and isinstance(dtype, torch.dtype):
                 tokens = tokens.to(dtype)
-            
+
             tokenized_chunks.append(tokens)
-        
+
         print(f'Chunk size : {tokenized_chunks[0].shape}*{(1,len(chunks))}')
         # If you want to return all chunks together:
         return torch.cat(tokenized_chunks,dim=1)
@@ -112,24 +113,24 @@ class MinTokenizer(Tokenizer):
         # A bit hacky, but we should have a vs size consistent with the number of tokens
         (self.t2i, self.i2t, self.vs) = ({ '[?]' : 0 }, { 0 : '[?]' }, 1) # token to int and int to token, vocab size
         if (file_name := params.get('file_name')) is not None: self.load_from_json(file_name)
-            
+
     def add_token(self, t, i = None):
         if t in self.t2i: return
         if i is None: i = len(self.t2i)
         (self.t2i[t], self.i2t[i]) = (i, t)
         self.vs = len(self.t2i) # equal to len(self.i2t) as well
         return i
-    
+
     def get_token_i(self, t, *, add_if_unknown = False): return self.add_token(t) if add_if_unknown else self.t2i.get(t, 0)
-    
-    def build_tokens_from_string(self, string): 
+
+    def build_tokens_from_string(self, string):
         for t in string: self.add_token(t)
 
-    def tokenize(self, s, *, add_if_unknown = False): 
+    def tokenize(self, s, *, add_if_unknown = False):
         token_ids = [self.get_token_i(token, add_if_unknown=add_if_unknown) for token in s] # list of t tokens
         return torch.tensor(token_ids)[None,:] # [1, t]
 
-    def detokenize(self, tokens, *, join=True): 
+    def detokenize(self, tokens, *, join=True):
         if len(tokens.shape) > 1: tokens = tokens.view(-1) # [b, t] -> [b * t]
         token_chars = [self.i2t.get(i, f'[{i}]?') for i in tokens.tolist()]
         return ''.join(token_chars) if join else token_chars
@@ -137,8 +138,8 @@ class MinTokenizer(Tokenizer):
     def save_to_json(self, file_name): save_json(dict(t2i = self.t2i), file_name)
 
     def load_from_json(self, file_name):
-        if 't2i' in (obj := load_json(file_name)): 
-            for (k, v) in obj['t2i'].items(): self.add_token(k, int(v))   
+        if 't2i' in (obj := load_json(file_name)):
+            for (k, v) in obj['t2i'].items(): self.add_token(k, int(v))
         else: log(f"Could not load from {file_name=}: invalid {obj=}")
 
 class HfTokenizer(Tokenizer):
@@ -148,10 +149,10 @@ class HfTokenizer(Tokenizer):
         self.vs = self.hf_tokenizer.vocab_size #
         if(self.m_name is None):
             self.m_name=''
-        
+
         (self.st_index, self.et_index) = (None, None) # start and end token indices (may need to be hacked)
 
-    def tokenize(self, s, **params): 
+    def tokenize(self, s, **params):
         if self.m_name.startswith('gpt2'): s = sanitize_quotes(s) # {?} a bit hacky
         return self.hf_tokenizer(s, return_tensors='pt', verbose=True).input_ids # [1, t]
 
@@ -162,18 +163,20 @@ class HfTokenizer(Tokenizer):
 
         return ''.join(t_strings) if join else t_strings
 
-def load_pretrained_hf_tokenizer(*, m_name:str=None, m_path:str=None): 
-    """ 
-        Loads a pre-trained Hugging Face tokenizer
-        Args:
-            m_name: the name of the model (e.g. 'gpt2', 'gpt2-large', 'gpt2-xl', 'bert-base-uncased') to be downloaded if necessary
-            m_path: the file path to the tokenizer (if stored in a directory)
+def load_pretrained_hf_tokenizer(*, m_name:str=None, m_path:str=None):
+    """
+    Loads a pre-trained Hugging Face tokenizer
+
+    Args:
+        m_name: the name of the model (e.g. 'gpt2', 'gpt2-large', 'gpt2-xl',
+            'bert-base-uncased') to be downloaded if necessary
+        m_path: the file path to the tokenizer (if stored in a directory)
     """
     if m_path is not None: return AutoTokenizer.from_pretrained(m_path,use_fast=True)
     elif m_name is not None: return AutoTokenizer.from_pretrained(m_name,use_fast=True)
     else: return None
 
-tokenizers_by_name = {} 
+tokenizers_by_name = {}
 
 ######################
 ### MAIN FUNCTIONS ###
@@ -181,24 +184,33 @@ tokenizers_by_name = {}
 
 def get_tokenizer(*, m_name:str=None, tokenizer_name:str=None, m_path:str=None):
     """
-        tokenizer_name (optional): if there is a tokenizer with that name in tokenizers_by_name
-        m_name (optional): a HuggingFace tokenizer name e.g. 'gpt2', 'gpt2-large', 'facebook/opt-125m', or 'bert-base-uncased'
-        m_path (optional): the path to the (HuggingFace) tokenizer (saved offline) 
+    Args:
+        tokenizer_name (optional): if there is a tokenizer with that name in
+            tokenizers_by_name
+        m_name (optional): a HuggingFace tokenizer name e.g. 'gpt2',
+            'gpt2-large', 'facebook/opt-125m', or 'bert-base-uncased'
+        m_path (optional): the path to the (HuggingFace) tokenizer (saved
+            offline)
     """
     return HfTokenizer(m_name=m_name, m_path=m_path) if any_not_none(m_name, m_path) else tokenizers_by_name.get(tokenizer_name)
 
 
 def tokenize_txt_file(txt_file_path:str, pt_file_path:str, *, tokenizer_name:str=None, m_name:str=None, m_path:str=None, dtype:torch.dtype=None):
-    """ 
-        Converts a txt file into a pytorch file containing the ids of the tensors 
-        (in format [1, t] where t is the number of tokesn)
-        Args: 
-            txt_file_path: the location of the source text file
-            pt_file_path: the location of the destination pytorch token file
-        tokenizer_name (optional): if there is a tokenizer with that name in tokenizers_by_name
-        m_name (optional): a HuggingFace tokenizer name e.g. 'gpt2', 'gpt2-large', 'facebook/opt-125m', or 'bert-base-uncased'
-        m_path (optional): the path to the (HuggingFace) tokenizer (saved offline)
-        dtype (optional): by default, the token tensors are int64, but another type (such as int16) can be specified
+    """
+    Converts a txt file into a pytorch file containing the ids of the tensors
+    (in format [1, t] where t is the number of tokesn)
+
+    Args:
+        txt_file_path: the location of the source text file
+        pt_file_path: the location of the destination pytorch token file
+        tokenizer_name (optional): if there is a tokenizer with that name in
+            tokenizers_by_name
+        m_name (optional): a HuggingFace tokenizer name e.g. 'gpt2',
+            'gpt2-large', 'facebook/opt-125m', or 'bert-base-uncased'
+        m_path (optional): the path to the (HuggingFace) tokenizer (saved
+            offline)
+        dtype (optional): by default, the token tensors are int64, but another
+            type (such as int16) can be specified
     """
     global tokenizers_by_name
     tokenizer = get_tokenizer(tokenizer_name=tokenizer_name, m_name=m_name, m_path=m_path)
@@ -210,9 +222,9 @@ def tokenize_dir_txt_files_from_tok(dir_path: str, pt_file_path: str, *, tokeniz
     if pt_file_path.endswith('.txt'): pt_file_path = pt_file_path[:-len('.txt')]
 
     txt_file_paths = []
-    for (subdir, _, files) in os.walk(dir_path): 
+    for (subdir, _, files) in os.walk(dir_path):
         txt_file_paths.extend([os.path.join(subdir, file) for file in files if file.endswith('.txt')])
-    
+
     part_index = 0
     big_txt = '' # A concatenation of the files
 
@@ -228,32 +240,37 @@ def tokenize_dir_txt_files_from_tok(dir_path: str, pt_file_path: str, *, tokeniz
     for txt_file_path in tqdm(txt_file_paths):
         print(f"Adding {txt_file_path} to big_txt")
         txt = load_string(txt_file_path) + ('\n' * 5)
-        big_txt += txt 
+        big_txt += txt
 
     save_and_clear_big_txt(big_txt, part_index)
 
 def tokenize_dir_txt_files(dir_path: str, pt_file_path: str, *, tokenizer_name:str=None, m_name:str=None, m_path:str=None, dtype:torch.dtype=None, limit_size=500*1024*1024):
-    """ 
-        Converts all the txt files into a pytorch file containing the ids of the tensors 
-        (in format [1, t] where t is the number of tokesn)
-        Args: 
-            txt_file_path: the location of the source text file
-            pt_file_path: the location of the destination pytorch token file
-        tokenizer_name (optional): if there is a tokenizer with that name in tokenizers_by_name
-        m_name (optional): a HuggingFace tokenizer name e.g. 'gpt2', 'gpt2-large', 'facebook/opt-125m', or 'bert-base-uncased'
-        m_path (optional): the path to the (HuggingFace) tokenizer (saved offline)
-        dtype (optional): by default, the token tensors are int64, but another type (such as int16) can be specified
+    """
+    Converts all the txt files into a pytorch file containing the ids of the
+    tensors (in format [1, t] where t is the number of tokesn)
+
+    Args:
+        txt_file_path: the location of the source text file
+        pt_file_path: the location of the destination pytorch token file
+        tokenizer_name (optional): if there is a tokenizer with that name in
+            tokenizers_by_name
+        m_name (optional): a HuggingFace tokenizer name e.g. 'gpt2',
+            'gpt2-large', 'facebook/opt-125m', or 'bert-base-uncased'
+        m_path (optional): the path to the (HuggingFace) tokenizer (saved
+            offline)
+        dtype (optional): by default, the token tensors are int64, but another
+            type (such as int16) can be specified
     """
     tokenizer = get_tokenizer(tokenizer_name=tokenizer_name, m_name=m_name, m_path=m_path)
     tokenize_dir_txt_files_from_tok(dir_path, pt_file_path, tokenizer=tokenizer, dtype=dtype)
-    
+
     # if pt_file_path.endswith('.pt'): pt_file_path = pt_file_path[:-len('.pt')]
     # if pt_file_path.endswith('.txt'): pt_file_path = pt_file_path[:-len('.txt')]
 
     # txt_file_paths = []
-    # for (subdir, _, files) in os.walk(dir_path): 
+    # for (subdir, _, files) in os.walk(dir_path):
     #     txt_file_paths.extend([os.path.join(subdir, file) for file in files if file.endswith('.txt')])
-    
+
     # part_index = 0
     # big_txt = '' # A concatenation of the files
 
@@ -270,8 +287,8 @@ def tokenize_dir_txt_files(dir_path: str, pt_file_path: str, *, tokenizer_name:s
     #     print(f"Adding {txt_file_path} to big_txt")
     #     txt = load_string(txt_file_path) + ('\n' * 5)
 
-    #     big_txt += txt 
-    #     while len(big_txt) >= limit_size: 
+    #     big_txt += txt
+    #     while len(big_txt) >= limit_size:
     #         text_chunk = big_txt[:limit_size]
     #         print(f"Sample : {text_chunk[:100]}")
     #         save_and_clear_big_txt(text_chunk, part_index)
@@ -283,15 +300,15 @@ def tokenize_dir_txt_files(dir_path: str, pt_file_path: str, *, tokenizer_name:s
 
 def run_main():
     """
-        Use :
+    Use:
         python tokenizer.py <txt_files_dir> <model_name> <dtype:uint8,visuint16,int32,int64>
     """
     (source_dir, dest_pt_file, m_name, dtype) = (None, None, None, None)
     (model_arg, dir_arg, dtype_arg) = (None, None, None)
     if len(sys.argv) > 1: dir_arg = sys.argv[1]
-    if len(sys.argv) > 2: model_arg = sys.argv[2]  
+    if len(sys.argv) > 2: model_arg = sys.argv[2]
     if len(sys.argv) > 3: dtype_arg = sys.argv[3]
-    if dir_arg is None: 
+    if dir_arg is None:
         dir_arg = get_first_directory('.')
         print(f"No directory was specified, using the first directory {dir_arg=}")
         if dir_arg is None: return

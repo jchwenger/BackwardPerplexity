@@ -1,11 +1,15 @@
 """
-    Training script for LSTM-like models. Use this along with the output of gen_run !
+Training script for LSTM-like models. Use this along with the output of
+gen_run!
 
-    Usage : python train_lstm.py <path_to_json_config_file> -d <device> -t <tokenizer_path> -p <project_name> -s
+Usage:
+    python train_lstm.py <path_to_json_config_file> -d <device> -t <tokenizer_path> -p <project_name> -s
 
-    Example : python train_lstm.py TrainParams/params.json -d cuda:0 -t fr -p MyProject -s
+Example:
+    python train_lstm.py TrainParams/params.json -d cuda:0 -t fr -p MyProject -s
 
-    Note : uses wandb, so you need to have a wandb account and be logged in.
+Note:
+    Uses wandb, so you need to have a wandb account and be logged in.
 """
 
 import argparse
@@ -18,7 +22,7 @@ if __name__=='__main__':
     parser.add_argument("-d", "--device", type=str, default='cpu', help="Device string, e.g. 'cuda:0' or 'cpu'")
     parser.add_argument("-t", "--tokenizer_path", type=str,help="Path for the tokenizer to use (only used for logging snippets). Relative to the train_script folder.")
     parser.add_argument("-p", "--project_name", help="Name of the project to log to. Default is 'CodePerplexity'")
-    parser.add_argument("-s", "--no_step_pickup", action="store_false", help="If set, train steps_to_train steps more. Otherwise, will train UP TO steps_to_train TOTAL steps.")  
+    parser.add_argument("-s", "--no_step_pickup", action="store_false", help="If set, train steps_to_train steps more. Otherwise, will train UP TO steps_to_train TOTAL steps.")
     args = parser.parse_args()
 
     if(args.project_name is None):
@@ -26,5 +30,5 @@ if __name__=='__main__':
     else:
         project_name = args.project_name
 
-    train(model_name='lstm', file_location=args.file_location, device=args.device, tokenizer_path=args.tokenizer_path, 
+    train(model_name='lstm', file_location=args.file_location, device=args.device, tokenizer_path=args.tokenizer_path,
           project_name=project_name, step_pickup=args.no_step_pickup)

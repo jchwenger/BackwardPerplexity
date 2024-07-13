@@ -16,8 +16,8 @@ from ...tokenizer import Tokenizer
 
 
 class MinGRU_Trainer(Trainer):
-    def __init__(self, model: MinGRU, train_dataset: TokenText, valid_dataset : TokenText, backwards : bool=True, 
-                 detokenizer :Tokenizer=None, optim: Optimizer = None, scheduler: _LRScheduler = None, 
+    def __init__(self, model: MinGRU, train_dataset: TokenText, valid_dataset : TokenText, backwards : bool=True,
+                 detokenizer :Tokenizer=None, optim: Optimizer = None, scheduler: _LRScheduler = None,
                  state_save_loc=None, device: str = 'cpu',parallel=None, run_name: str = None, project_name: str = None,
                  run_config: dict ={}):
         super().__init__(model, optim, scheduler, state_save_loc=state_save_loc, device=device, parallel=parallel,
@@ -46,10 +46,10 @@ class MinGRU_Trainer(Trainer):
     def process_batch(self, batch_data):
         # Check if correct, but should be :
         loss = self.compute_loss(batch_data)
-        
+
         if(self.do_batch_log) :
             wandb.log({'lr' : self.scheduler.get_last_lr()[0]},commit=False)
-    
+
         return loss
 
     def compute_loss(self, batch_data):
@@ -73,7 +73,7 @@ class MinGRU_Trainer(Trainer):
         loss = self.compute_loss(batch_data)
 
         return loss
-        
+
 
     def valid_log(self):
         #To be implemented when doing validation
@@ -87,7 +87,7 @@ class MinGRU_Trainer(Trainer):
         else :
             phrase_out=self.detokenizer.detokenize(phrase_out)
 
-        self.text_table.add_data(f"{self.steps_done/1000:.1f}k",phrase_out) 
+        self.text_table.add_data(f"{self.steps_done/1000:.1f}k",phrase_out)
         # Trick to be able to update table on the fly... Fucking wandb
         new_table = wandb.Table(
         columns=self.text_table.columns, data=self.text_table.data

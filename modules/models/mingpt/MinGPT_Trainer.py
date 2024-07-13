@@ -16,8 +16,8 @@ from ...tokenizer import Tokenizer
 
 
 class MinGPT_Trainer(Trainer):
-    def __init__(self, model: MinGPT, train_dataset: TokenText, valid_dataset : TokenText, backwards : bool=True, 
-                 detokenizer :Tokenizer=None, optim: Optimizer = None, scheduler: _LRScheduler = None, 
+    def __init__(self, model: MinGPT, train_dataset: TokenText, valid_dataset : TokenText, backwards : bool=True,
+                 detokenizer :Tokenizer=None, optim: Optimizer = None, scheduler: _LRScheduler = None,
                  state_save_loc=None, device: str = 'cpu',parallel=None, run_name: str = None, project_name: str = None,
                  run_config: dict ={}):
         super().__init__(model, optim, scheduler, save_loc=state_save_loc, device=device, parallel=parallel,
@@ -47,10 +47,10 @@ class MinGPT_Trainer(Trainer):
     def process_batch(self, batch_data):
         # Compute the loss, and log the learning rate
         loss = self.compute_loss(batch_data)
-        
+
         if(self.do_step_log) :
             self.logger.log({'lr' : self.scheduler.get_last_lr()[0]},commit=False)
-    
+
         return loss
 
     def compute_loss(self, batch_data):
@@ -76,7 +76,7 @@ class MinGPT_Trainer(Trainer):
 
     def valid_log(self):
         """
-            Log a snippet of generated text in a wandb Table
+        Log a snippet of generated text in a wandb Table
         """
         data, _ = self.valid_dataset[random.randint(0,len(self.valid_dataset)-1)] # (T,)*2
         data = data[:5].to(self.device) # only keep first 5 tokens, to start generating
@@ -93,10 +93,10 @@ class MinGPT_Trainer(Trainer):
         else :
             phrase_out=self.detokenizer.detokenize(phrase_out)
 
-        self.text_table.add_data(f"{self.steps_done/1000:.1f}k",phrase_out) 
+        self.text_table.add_data(f"{self.steps_done/1000:.1f}k",phrase_out)
         # Fucking wandb... To update the table before end, need to re-create one each time
         new_table = wandb.Table(
         columns=self.text_table.columns, data=self.text_table.data
         )
-        
+
         wandb.log({'gen_samples': new_table},commit=False)

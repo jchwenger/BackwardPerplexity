@@ -1,9 +1,8 @@
 """
-    Contains the method necessary to train a Tokenizer with BPE.
-    Only work on a single .txt file. Should be no bigger than ~50 GB, to avoid
-    memory issues.
-    
-    File should contain regular spaces, otherwise it might crash with OOM error.
+Contains the method necessary to train a Tokenizer with BPE. Only work on a
+single .txt file. Should be no bigger than ~50 GB, to avoid memory issues.
+
+File should contain regular spaces, otherwise it might crash with OOM error.
 """
 
 import os
@@ -40,7 +39,7 @@ def read_in_lines(file_path, batch_size=512, phrase_size=2048):  # phrase_size i
         while not done:
             lines=[]
             newline=''
-            
+
             while (len(lines)<batch_size and not done):
                 while(len(newline)<=phrase_size):
                     #Read lines until we get something long enough
@@ -71,16 +70,20 @@ def read_in_lines(file_path, batch_size=512, phrase_size=2048):  # phrase_size i
 
 def create_tokenizer(txt_path, save_directory = None, tokenizer_name=None, vocab_size=50257):
     """
-        Creates a custom BPE huggingface tokenizer from a .txt file. The tokenizer is saved as a folder,
-        and can be loaded with the helper function 'get_tokenizer(m_path=<tokenizer folder>)' from modules/tokenizer.py.
-        Needs quite a bit of memory, depending on dataset size.
-        If the data has no spaces, it will probably crash with out of memory error.
+    Creates a custom BPE huggingface tokenizer from a .txt file. The tokenizer
+    is saved as a folder, and can be loaded with the helper function
+    `get_tokenizer(m_path=<tokenizer folder>)` from modules/tokenizer.py. Needs
+    quite a bit of memory, depending on dataset size. If the data has no
+    spaces, it will probably crash with out of memory error.
 
-        Args :
-        txt_path : Path to the .txt file to use for training the tokenizer.
-        save_directory : Directory where the tokenizer will be saved. If None, will be saved in the same directory as the .txt file.
-        tokenizer_name : Name of the tokenizer. If None, will be the name of the .txt file, followed by _tokenizer.
-        vocab_size : Size of the vocabulary to use for the tokenizer. Default is 50257, which is the GPT2 vocabulary size.
+    Args:
+        txt_path: Path to the .txt file to use for training the tokenizer.
+        save_directory: Directory where the tokenizer will be saved. If None,
+            will be saved in the same directory as the .txt file.
+        tokenizer_name: Name of the tokenizer. If None, will be the name of the
+            .txt file, followed by _tokenizer.
+        vocab_size: Size of the vocabulary to use for the tokenizer. Default is
+            50257, which is the GPT2 vocabulary size.
     """
     if save_directory is None:
         save_directory = os.path.dirname(txt_path)

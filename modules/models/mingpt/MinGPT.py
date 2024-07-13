@@ -14,38 +14,41 @@ from torchenhanced import ConfigModule
 
 
 class MinGPT(ConfigModule):
-    """ 
-        GPT Language Model.
+    """
+    GPT Language Model.
 
-        For reference, here are some standard parameters
-        # GPT-1
-        n_layer=12, n_head=12, n_embd=768  # 117M params
-        # GPT-2 configs
-        'gpt2':         n_layer=12, n_head=12, n_embd=768,  # 124M params
-        'gpt2-medium':  n_layer=24, n_head=16, n_embd=1024, # 350M params
-        'gpt2-large':   n_layer=36, n_head=20, n_embd=1280, # 774M params
-        'gpt2-xl':      n_layer=48, n_head=25, n_embd=1600, # 1558M params
-        # Gophers
-        'gopher-44m':   n_layer=8, n_head=16, n_embd=512,
-        'gpt-mini':     n_layer=6, n_head=6, n_embd=192,
-        'gpt-micro':    n_layer=4, n_head=4, n_embd=128,
-        'gpt-nano':     n_layer=3, n_head=3, n_embd=48,
+    For reference, here are some standard parameters
+
+    # GPT-1
+    n_layer=12, n_head=12, n_embd=768  # 117M params
+
+    # GPT-2 configs
+    'gpt2':         n_layer=12, n_head=12, n_embd=768,  # 124M params
+    'gpt2-medium':  n_layer=24, n_head=16, n_embd=1024, # 350M params
+    'gpt2-large':   n_layer=36, n_head=20, n_embd=1280, # 774M params
+    'gpt2-xl':      n_layer=48, n_head=25, n_embd=1600, # 1558M params
+
+    # Gophers
+    'gopher-44m':   n_layer=8, n_head=16, n_embd=512,
+    'gpt-mini':     n_layer=6, n_head=6, n_embd=192,
+    'gpt-micro':    n_layer=4, n_head=4, n_embd=128,
+    'gpt-nano':     n_layer=3, n_head=3, n_embd=48,
     """
 
-    def __init__(self, vocab_size:int,n_layers:int,embed_dim :int, n_heads:int,attn_length:int, 
+    def __init__(self, vocab_size:int,n_layers:int,embed_dim :int, n_heads:int,attn_length:int,
                  mlp_ratio:float=4,dropout:float=0.1, embd_dropout:float=None):
         """
-            Args :
-                vocab_size : number of tokens in the vocabulary
-                n_layer : number of transformer layers
-                embed_dim : number of embedding dimensions
-                n_heads : number of attention heads, must divie embed_dim
-                attn_length : length of the attention window
-                mlp_ratio : ratio of mlp hidden dim to embedding dim
-                dropout : (optional) dropout probability
-                embd_dropout : (optional) dropout probability for the embedding layer
-                configo = dict(vocab_size=vocab_size,n_layers=n_layers,embed_dim=embed_dim,n_heads=n_heads,
-                            attn_length=attn_length,mlp_ratio=mlp_ratio,dropout=dropout,embd_dropout=embd_dropout)
+        Args:
+            vocab_size: number of tokens in the vocabulary
+            n_layer: number of transformer layers
+            embed_dim: number of embedding dimensions
+            n_heads: number of attention heads, must divie embed_dim
+            attn_length: length of the attention window
+            mlp_ratio: ratio of mlp hidden dim to embedding dim
+            dropout: (optional) dropout probability
+            embd_dropout: (optional) dropout probability for the embedding layer
+            configo = dict(vocab_size=vocab_size,n_layers=n_layers,embed_dim=embed_dim,n_heads=n_heads,
+                        attn_length=attn_length,mlp_ratio=mlp_ratio,dropout=dropout,embd_dropout=embd_dropout)
         """
         configo = dict(vocab_size=vocab_size,n_layers=n_layers,embed_dim=embed_dim,n_heads=n_heads,
                             attn_length=attn_length,mlp_ratio=mlp_ratio,dropout=dropout,embd_dropout=embd_dropout)
@@ -73,12 +76,13 @@ class MinGPT(ConfigModule):
 
     def forward(self, idx)-> torch.Tensor:
         """
-            Process sequence of digits and outputs logits
+        Process sequence of digits and outputs logits
 
-            Args:
-            idx : (B,T) sequence of TOKENIZED text. Max token integer must be <= self.vocab_size
+        Args:
+            idx: (B,T) sequence of TOKENIZED text.
+                Max token integer must be <= self.vocab_size
 
-            Returns :
+        Returns:
             (B,T,vocab_size) Tensor of logits.
         """
         B, T = idx.shape
@@ -104,19 +108,25 @@ class MinGPT(ConfigModule):
     @torch.no_grad()
     def generate(self, idx, max_new_tokens, temperature=1.0, do_sample=False, top_k=None):
         """
-            Take a conditioning sequence of indices idx (LongTensor of shape (B,T)) and complete
-            the sequence max_new_tokens times, feeding the predictions back into the model each time.
-            Use with model in inference mode (apply model.eval() first)
+        Take a conditioning sequence of indices idx (LongTensor of shape (B,T))
+        and complete the sequence max_new_tokens times, feeding the predictions
+        back into the model each time. Use with model in inference mode (apply
+        model.eval() first)
 
-            Args :
-            idx : (B,T) tensor of context tokens. Mostly, it will be B=1 but can do in parallel also
-            max_new_tokens : number of tokens to generate on top of the conditioning sequence
-            temperature : softmax temperature (lower -> more conservative sampling)
-            do_sample : if True, use multinomial sampling. Otherwise use greedy decoding
-            top_k : if set to int > 0, only sample from the top k most probable logits
+        Args:
+            idx: (B,T) tensor of context tokens. Mostly, it will be B=1 but can
+                do in parallel also
+            max_new_tokens: number of tokens to generate on top of the
+                conditioning sequence
+            temperature: softmax temperature (lower -> more conservative
+                sampling)
+            do_sample: if True, use multinomial sampling. Otherwise use greedy
+                decoding
+            top_k: if set to int > 0, only sample from the top k most probable logits
 
-            Returns :
-            (B,T) LongTensor of generated token indices. Must still be decoded by tokenizer.
+        Returns:
+            (B,T) LongTensor of generated token indices. Must still be decoded
+            by tokenizer.
         """
 
         for _ in tqdm(range(max_new_tokens)):
@@ -125,22 +135,28 @@ class MinGPT(ConfigModule):
             idx = torch.cat((idx, idx_next), dim=1)
 
         return idx
-    
+
     @torch.no_grad()
     def generate_next_token(self,idx,temperature=1.0, do_sample=False, top_k=None):
         """
-            Take a conditioning sequence of indices idx (LongTensor of shape (B,T)) and complete
-            the sequence max_new_tokens times, feeding the predictions back into the model each time.
-            Use with model in inference mode (apply model.eval() first)
+        Take a conditioning sequence of indices idx (LongTensor of shape (B,T))
+        and complete the sequence max_new_tokens times, feeding the predictions
+        back into the model each time. Use with model in inference mode (apply
+        model.eval() first)
 
-            Args :
-            idx : (B,T) tensor of context tokens. Mostly, it will be B=1 but can do in parallel also
-            max_new_tokens : number of tokens to generate on top of the conditioning sequence
-            temperature : softmax temperature (lower -> more conservative sampling)
-            do_sample : if True, use multinomial sampling. Otherwise use greedy decoding
-            top_k : if set to int > 0, only sample from the top k most probable logits
+        Args:
+            idx: (B,T) tensor of context tokens. Mostly, it will be B=1 but can
+                do in parallel also
+            max_new_tokens: number of tokens to generate on top of the
+                conditioning sequence
+            temperature: softmax temperature (lower -> more conservative
+                sampling)
+            do_sample: if True, use multinomial sampling. Otherwise use greedy
+                decoding
+            top_k: if set to int > 0, only sample from the top k most probable
+                logits
 
-            Returns :
+        Returns:
             next predicted token, Long
         """
         idx_cond = idx if idx.shape[1] <= self.attn_length else idx[:, -self.attn_length:]
@@ -167,14 +183,15 @@ class MinGPT(ConfigModule):
 
 class CausalSelfAttention(DevModule):
     """
-        Multi-head masked self-attention layer. Maybe in the future, benchmark against
-        native pytorch implementation to make sure its not too slow/memory hungry
+    Multi-head masked self-attention layer. Maybe in the future, benchmark
+    against native pytorch implementation to make sure its not too slow/memory
+    hungry
 
-        Args :
-            embed_dim : number of embedding dimensions
-            n_heads : number of attention heads
-            attn_length : length of the attention window
-            dropout : (optional) dropout probability 
+    Args:
+        embed_dim: number of embedding dimensions
+        n_heads: number of attention heads
+        attn_length: length of the attention window
+        dropout: (optional) dropout probability
     """
 
     def __init__(self, embed_dim : int, n_heads :int, attn_length:int, dropout:float = 0.1):
@@ -220,15 +237,15 @@ class CausalSelfAttention(DevModule):
 
 
 class Block(DevModule):
-    """ 
-        One transformer block/layer, causal attention followed by a MLP.
+    """
+    One transformer block/layer, causal attention followed by a MLP.
 
-        Args :
-            embed_dim : number of embedding dimensions
-            n_heads : number of attention heads
-            attn_length : length of the attention window
-            mlp_ratio : ratio of mlp hidden dim to embedding dim
-            dropout : (optional) dropout probability
+    Args:
+        embed_dim: number of embedding dimensions
+        n_heads: number of attention heads
+        attn_length: length of the attention window
+        mlp_ratio: ratio of mlp hidden dim to embedding dim
+        dropout: (optional) dropout probability
     """
 
     def __init__(self, embed_dim :int, n_heads:int,attn_length:int, mlp_ratio:float,dropout:float=0.1):
@@ -244,7 +261,7 @@ class Block(DevModule):
             c_proj  = nn.Linear(int(mlp_ratio * embed_dim), embed_dim),
             dropout = nn.Dropout(dropout),
         ))
-        
+
 
     def forward(self, x):
         x = x + self.attn(self.ln_1(x))

@@ -7,10 +7,10 @@ from .mingpt import MinGPT_Trainer
 
 def load_model(model_name:str, model_config:dict):
     """
-        Loads and return model.
+    Loads and return model.
 
-        Args:
-        model_name : name of the model to load. 'gru','lstm' or 'gpt'
+    Args:
+        model_name: name of the model to load. 'gru','lstm' or 'gpt'
     """
     model_dict= {'gru':MinGRU,'lstm':MinLSTM,'gpt':MinGPT}
     assert model_name.lower() in ['gru','lstm','gpt'], 'Model name should be one of "gru","lstm" or "gpt"'
@@ -19,11 +19,11 @@ def load_model(model_name:str, model_config:dict):
 
 def load_trainer(model_name: str, trainer_config:dict):
     """
-        Loads and return trainer.
+    Loads and return trainer.
 
-        Args:
-        model_name : name of the model to load. 'gru','lstm' or 'gpt'
-        trainer_config : dict of parameters to the trainer
+    Args:
+        model_name: name of the model to load. 'gru','lstm' or 'gpt'
+        trainer_config: dict of parameters to the trainer
     """
 
     trainer_dict = {'gru':MinGRU_Trainer,'lstm':MinGRU_Trainer,'gpt':MinGPT_Trainer}

@@ -1,17 +1,23 @@
 """
-    Defines the methods needed for tokenizing of .txt files into .pt, given 
-    a pre-existing tokenizer.
+Defines the methods needed for tokenizing of .txt files into .pt, given
+a pre-existing tokenizer.
 
-    Can be used as a script. 
-    USAGE : python tokenize_to_pt.py <folder_path> -t <tokenizer_name> -p
-    Arguments:
-        folder_path (str): Mandatory. Path to the folder containing txt files to be tokenized.
-        --tokenizer_name, -t (str): Optional. Specifies the tokenizer by name. Defaults to 'gpt2' if not provided.
-        --no_preprocess, -p: Optional flag. If set, skips splitting and sanitizing the text files.
+Can be used as a script.
 
-    The script processes each text file in the directory with the specified or default tokenizer, 
-    and can optionally skip preprocessing steps based on the command line arguments.
+Usage:
+    python tokenize_to_pt.py <folder_path> -t <tokenizer_name> -p
 
+Arguments:
+    folder_path (str): Mandatory. Path to the folder containing txt files to be
+        tokenized.
+    --tokenizer_name, -t (str): Optional. Specifies the tokenizer by name.
+        Defaults to 'gpt2' if not provided.
+    --no_preprocess, -p: Optional flag. If set, skips splitting and sanitizing
+        the text files.
+
+The script processes each text file in the directory with the specified or
+default tokenizer, and can optionally skip preprocessing steps based on the
+command line arguments.
 """
 
 import os
@@ -24,7 +30,7 @@ import torch
 
 from modules import tokenizer
 
-MAX_SIZE = 2*1024*1024*1024 
+MAX_SIZE = 2*1024*1024*1024
 
 def replace_unusual_terminators(filename):
     """Replace unusual line terminators with standard newline."""
@@ -33,7 +39,7 @@ def replace_unusual_terminators(filename):
 
     with open(filename, 'r', encoding='utf-8') as f:
         data = f.read()
-    
+
         data = data.replace(LS, '\n').replace(PS, '\n')
 
         with open(filename, 'w', encoding='utf-8') as f:
@@ -82,16 +88,16 @@ def split_file(filename, split_dir):
                 target.write(data)
             print(f'Split {part_num*MAX_SIZE/1e9}GB so far')
             part_num += 1
-            
+
 
 def main_split_large(folder_path, target_path):
     """
-        Use split_file on a folder containing big .txt files.
-        Backs up the un-split text.
+    Use split_file on a folder containing big .txt files.
+    Backs up the un-split text.
 
-        Args:
-        folder_path : Path to the folder containing the .txt files to split.
-        target_path : Path to the folder that will contain the splits (created
+    Args:
+        folder_path: Path to the folder containing the .txt files to split.
+        target_path: Path to the folder that will contain the splits (created
             if needed).
     """
     folder_name = os.path.basename(os.path.normpath(folder_path))
@@ -108,25 +114,27 @@ def main_split_large(folder_path, target_path):
             else:
                 # Copy original file to split folder
                 shutil.copy(filepath, target_path)
-            
-            
+
+
 
 
 def tokenize_folder(folder_path, tokenizer_path=None, no_preprocess=False):
     """
-        Pipeline for tokenizing text in a folder. Is NOT recursive, will
-        act only on .txt files contained in folder_path.
+    Pipeline for tokenizing text in a folder. Is NOT recursive, will
+    act only on .txt files contained in folder_path.
 
-        Save the tensors containing the tokens as .pt files in a folder named
-        `folder_path`_pt (appending "_pt").
-        Each .pt file contains a tensor of shape [1, n_tokens], which
-        can be loaded with torch.load if needed.
-        
-        Args:
-        folder_path : Path to the folder containing the .txt files to tokenize.
-        tokenizer_path : Path to the tokenizer to use. If None, will use the default GPT2 tokenizer.
-        no_preprocess : If True, will not do the splitting and sanitization of the files. Default is False. 
-            (use True if tokenization crashed after sanitization, to not repeat preprocessing)
+    Save the tensors containing the tokens as .pt files in a folder named
+    `folder_path`_pt (appending "_pt"). Each .pt file contains a tensor of
+    shape [1, n_tokens], which can be loaded with torch.load if needed.
+
+    Args:
+        folder_path: Path to the folder containing the .txt files to
+            tokenize.
+        tokenizer_path: Path to the tokenizer to use. If None, will use the
+            default GPT2 tokenizer.
+        no_preprocess: If True, will not do the splitting and sanitization
+            of the files. Default is False. (use True if tokenization
+            crashed after sanitization, to not repeat preprocessing)
     """
     if(tokenizer_path is None):
         raise ValueError('Tokenizer path required, please specify with -t <tokenizer_path>')
@@ -146,7 +154,7 @@ def tokenize_folder(folder_path, tokenizer_path=None, no_preprocess=False):
         # Then remove strange terminators
         main_replace_unusual(target_path)
 
-    # Then run the tokenizer on the MAX_SIZE txt files : 
+    # Then run the tokenizer on the MAX_SIZE txt files :
     for txtfile in os.listdir(target_path):
         if(txtfile.endswith('.txt')):
             toki.tokenize_txt_file_to_pt_file(os.path.join(target_path,txtfile), f'{os.path.join(target_path,txtfile[:-4])}_tokenized.pt', dtype=torch.int32)

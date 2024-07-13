@@ -1,5 +1,5 @@
 """
-    Base training function for language models. 
+Base training function for language models.
 """
 
 import os
@@ -24,16 +24,19 @@ from torchenhanced import CosineWarmup
 def train(model_name : str, file_location : str, device : str | list[str], tokenizer_path : str ,
            project_name :str, step_pickup: bool=True):
     """
-        Main train script. Launches training of a model given parameters in a JSON file at file_location
+    Main train script. Launches training of a model given parameters in a JSON file at file_location
 
-        Args:
-        file_location : path to the JSON config file
-        device : device to train on. 'cpu' or 'cuda:0'. Can be a list of devices for data parallelism.
-        tokenizer_path : path to the tokenizer to use. Relative to the train_script folder.
-        project_name : name of the project to log to. Default is 'NewBackPerp'
-        step_pickup : If false, train steps_to_train steps more. If true, will train UP TO steps_to_train TOTAL steps.
+    Args:
+        file_location: path to the JSON config file
+        device: device to train on. 'cpu' or 'cuda:0'. Can be a list of devices
+            for data parallelism.
+        tokenizer_path: path to the tokenizer to use. Relative to the
+            train_script folder.
+        project_name: name of the project to log to. Default is 'NewBackPerp'
+        step_pickup: If false, train steps_to_train steps more. If true, will
+            train UP TO steps_to_train TOTAL steps.
     """
-    
+
     cur_path = pathlib.Path(__file__).parent.absolute().as_posix()
     run_name = os.path.splitext(os.path.basename(file_location))[0]
 
@@ -43,7 +46,7 @@ def train(model_name : str, file_location : str, device : str | list[str], token
     if(not os.path.exists(os.path.join(cur_path,tokenizer_path))):
         raise(FileNotFoundError(f'Tokenizer not found at path {os.path.join(cur_path,tokenizer_path)}. \n \
                                 Tokenizer path should be relative to train_script.py.'))
-    
+
     tokenizer_path = os.path.join(cur_path,tokenizer_path)
     tokenizer = get_tokenizer(m_path=tokenizer_path)
 
@@ -75,12 +78,12 @@ def train(model_name : str, file_location : str, device : str | list[str], token
     valid_percent_time=valid_percent_time/100
 
     valid_every = int(valid_steps/valid_percent_time)
-    
+
     backwards = training_params['backwards'] # If we train backwards
 
     rng = np.random.default_rng(42) # For deterministic shuffling of dataset
 
-    # First copy the dataset in the current folder. 
+    # First copy the dataset in the current folder.
     # This is useful in the case of a network drive, where the dataset is slow to access.
     # Can be removed if dataset location is local.
 
@@ -92,7 +95,7 @@ def train(model_name : str, file_location : str, device : str | list[str], token
         shutil.copy(dataset_path, destination_path)
     else :
         print('Dataset already copied to current folder, using this one.')
-    
+
     # Generate and shuffle the dataset
     motherDataset = TokenTextBOS(h5_file=destination_path, attn_length=model_params['attn_length'], backwards=backwards)
     indices = np.arange(len(motherDataset))
@@ -103,7 +106,7 @@ def train(model_name : str, file_location : str, device : str | list[str], token
     val_inds = valid_steps*250
     val_range = range(len(motherDataset)-val_inds,len(motherDataset)) # Validation, last portion of dataset
     keep_range = range(len(motherDataset)-val_inds) # Training, first portion of dataset
-    
+
     del indices
 
     #Whether backwards or forwards, its the individual examples that are flipped, not the dataset. So same thing for both !
@@ -115,14 +118,14 @@ def train(model_name : str, file_location : str, device : str | list[str], token
     print('TRAIN ANSWER : ',tokenizer.detokenize(train_dataset[0][1][:20]))
     print('VALID DATA   :',tokenizer.detokenize(val_dataset[0][0][:20]))
     print('VALID ANSWER : ',tokenizer.detokenize(val_dataset[0][1][:20]))
-    
+
     model = load_model(model_name, model_params)
 
     #====================== TRAINING PARAMETERS =======================
     batch_size = training_params['batch_size']
     aggregate = training_params['aggregate']
     totbatches = len(train_dataset)//batch_size
-    
+
     if(training_params['steps_to_train'] is None):
         steps_to_train = totbatches*4
     else:
@@ -148,10 +151,10 @@ def train(model_name : str, file_location : str, device : str | list[str], token
         train_dataset=train_dataset,valid_dataset=val_dataset, detokenizer=tokenizer,
         run_name=run_name, project_name=project_name, state_save_loc=training_params['state_save_loc'], backwards=backwards,
         device=device, parallel=parallel, run_config={'model_params':model_params,'train':training_params,'opti':optim_params} )
-    
+
     trainer = load_trainer(model_name, trainer_config=trainer_config)
 
-    
+
     if(os.path.exists(os.path.join(training_params['state_save_loc'],project_name,'state',run_name+'.state'))):
         trainer.load_state(os.path.join(training_params['state_save_loc'],project_name,'state',run_name+'.state'))
     trainer.stepnum =1

@@ -4,6 +4,7 @@ import os
 import sys
 import json
 import pathlib
+import argparse
 from tqdm import tqdm
 
 import torch
@@ -298,25 +299,66 @@ def tokenize_dir_txt_files(dir_path: str, pt_file_path: str, *, tokenizer_name:s
     #     print(f"Full big_txt length : {len(big_txt)}")
     # save_and_clear_big_txt(big_txt, part_index)
 
-def run_main():
-    """
-    Use:
-        python tokenizer.py <txt_files_dir> <model_name> <dtype:uint8,visuint16,int32,int64>
-    """
-    (source_dir, dest_pt_file, m_name, dtype) = (None, None, None, None)
-    (model_arg, dir_arg, dtype_arg) = (None, None, None)
-    if len(sys.argv) > 1: dir_arg = sys.argv[1]
-    if len(sys.argv) > 2: model_arg = sys.argv[2]
-    if len(sys.argv) > 3: dtype_arg = sys.argv[3]
-    if dir_arg is None:
-        dir_arg = get_first_directory('.')
-        print(f"No directory was specified, using the first directory {dir_arg=}")
-        if dir_arg is None: return
-    print(f'RECEIVE : dir {dir_arg}, model:{model_arg}, dtype :{dtype_arg}')
-    (source_dir, dest_pt_file) = (dir_arg, f"{dir_arg}.pt")
-    m_name = model_arg if model_arg is not None else 'gpt2'
-    type_dict = dict(uint8=torch.uint8, visuint16=torch.int16, int32=torch.int32, int64=torch.int64)
-    dtype = type_dict[dtype_arg] if dtype_arg in type_dict else None
-    tokenize_dir_txt_files(source_dir, dest_pt_file, m_name=m_name, dtype=dtype)
+if __name__ == "__main__":
 
-if __name__ == '__main__': run_main()
+    parser = argparse.ArgumentParser(
+        description="""
+        Tokenize .txt files in a given directory into PyTorch tensors of the
+        given type, using a specific tokenizer.
+
+        Use:
+            python tokenizer.py <txt_files_dir> <tokenizer_name> <dtype:uint8,visuint16,int32,int64>
+        """
+    )
+
+    parser.add_argument(
+        "input_directory",
+        type=str,
+        help="""
+        The directory path containing the txt files.
+        """
+    )
+
+    toks = parser.add_mutually_exclusive_group()
+
+    toks.add_argument(
+        "--tokenizer",
+        type=str,
+        default='gpt2',
+        help="""
+        The name of the Huggingface-downloadable tokenizer to
+        use. Default: 'gpt2'.
+        """
+    )
+
+    toks.add_argument(
+        "--tokenizer_local",
+        type=str,
+        default=None,
+        help="""
+        The name of the locally saved tokenizer to use.
+        """
+    )
+
+    parser.add_argument(
+        "--dtype",
+        type=str,
+        choices=["uint8","visuint16","int32","int64"],
+        default=None,
+        help="""
+        The dtype to cast the PyTorch tensors into. Choices:
+        'uint8,visuint16,int32,int64'. Default: None.
+        """
+    )
+
+    args = parser.parse_args()
+
+    print(f"Received: dir: {args.input_directory}, model:{args.tokenizer}, dtype :{args.dtype}")
+
+    tokenize_dir_txt_files(
+        dir_path = args.input_directory,
+        pt_file_path = f"{args.input_directory}.pt",
+        m_name=args.tokenizer,
+        m_path=args.tokenizer_local,
+        dtype=args.dtype
+    )

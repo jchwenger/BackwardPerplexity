@@ -6,6 +6,7 @@ File should contain regular spaces, otherwise it might crash with OOM error.
 """
 
 import os
+import argparse
 
 from transformers import AutoTokenizer
 
@@ -81,7 +82,7 @@ def create_tokenizer(txt_path, save_directory = None, tokenizer_name=None, vocab
         save_directory: Directory where the tokenizer will be saved. If None,
             will be saved in the same directory as the .txt file.
         tokenizer_name: Name of the tokenizer. If None, will be the name of the
-            .txt file, followed by _tokenizer.
+            .txt file, followed by `_tokenizer`.
         vocab_size: Size of the vocabulary to use for the tokenizer. Default is
             50257, which is the GPT2 vocabulary size.
     """
@@ -90,6 +91,7 @@ def create_tokenizer(txt_path, save_directory = None, tokenizer_name=None, vocab
 
     if tokenizer_name is None:
         tokenizer_name = f'{os.path.basename(txt_path).split(".")[0]}_tokenizer'
+        print(f"No tokenizer name provided, defaulting to: {tokenizer_name}")
 
     toke_base = AutoTokenizer.from_pretrained('gpt2',use_fast=True) # Load gpt2 tokenizer, to get same vocab_size and special tokens
     # .txt dataset (full dataset in the txt file, for now.)
@@ -97,7 +99,55 @@ def create_tokenizer(txt_path, save_directory = None, tokenizer_name=None, vocab
     toke_mine.save_pretrained(os.path.join(save_directory, tokenizer_name)) # Save the tokenizer
 
 
-if __name__=="__main__":
-    txt_path = 'datavol/vi.txt'
+if __name__ == "__main__":
 
-    create_tokenizer(txt_path, 'vi',vocab_size=50257)
+    parser = argparse.ArgumentParser(
+        description="""
+        Trains a Huggingface Tokenizer with BPE. Only work on a single .txt
+        file. Should be no bigger than ~50 GB, to avoid memory issues.
+        """
+    )
+
+    parser.add_argument(
+        "input_file",
+        type=str,
+        help="""
+        Path to the .txt file to use for training the tokenizer.
+        """
+    )
+
+    parser.add_argument(
+        "--output_directory", "-d",
+        type=str,
+        help="""
+        Directory where the tokenizer will be saved. If None,
+        will be saved in the same directory as the .txt file.
+        """
+    )
+
+    parser.add_argument(
+        "--tokenizer_name", "-t",
+        type=str,
+        default=None,
+        help="""
+        Name of the tokenizer. If None, will be the name of the
+        .txt file, followed by `_tokenizer`. Default is None.
+        """
+    )
+
+    parser.add_argument(
+        "--vocab_size",
+        type=int,
+        default=50257,
+        help="""
+        Size of the vocabulary to use for the tokenizer.
+        Default is 50257, which is the GPT2 vocabulary size.
+        """
+    )
+
+    args = parser.parse_args()
+
+    create_tokenizer(
+        txt_path = args.input_file, save_directory = args.output_directory,
+        tokenizer_name = args.tokenizer_name, vocab_size = args.vocab_size,
+    )

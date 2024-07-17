@@ -34,14 +34,20 @@ def txt_to_h5(txt_path, out_h5_folder, tokenizer_folder, tokenizer_name):
         tokenizer_folder (str): Folder where the tokenizer will be saved
         tokenizer_name (str): Name of the tokenizer that will be saved
     """
-    create_tokenizer(txt_path, tokenizer_folder,tokenizer_name=tokenizer_name)
-    tokenize_folder(os.path.dirname(txt_path), os.path.join(tokenizer_folder,tokenizer_name))
-    toki = get_tokenizer(m_path=os.path.join(tokenizer_folder,tokenizer_name))
-    make_h5(os.path.dirname(txt_path), os.path.splitext(os.path.basename(txt_path))[0], out_h5_folder,toki)
+    create_tokenizer(txt_path, tokenizer_folder, tokenizer_name=tokenizer_name)
+    tokenize_folder(
+        os.path.dirname(txt_path), os.path.join(tokenizer_folder, tokenizer_name)
+    )
+    toki = get_tokenizer(m_path=os.path.join(tokenizer_folder, tokenizer_name))
+    make_h5(
+        os.path.dirname(txt_path),
+        os.path.splitext(os.path.basename(txt_path))[0],
+        out_h5_folder,
+        toki,
+    )
 
 
-if __name__=='__main__':
-
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="""
         Script for preparing a .txt cc-100 dataset for training. Creates the
@@ -76,9 +82,10 @@ if __name__=='__main__':
 
     txt_folder = os.path.split(args.txt_path)[0]
 
-    out_h5_folder = f"{txt_folder}_h5" #  Folder that will contain the output .h5 file
-    tokenizer_folder = "modules/tokenizers" # Folder where the tokenizer will be saved
-    tokenizer_name = f"{txt_folder}_tokenizer" # Name of the tokenizer that will be saved
+    out_h5_folder = f"{txt_folder}_h5"  #  Folder that will contain the output .h5 file
+    tokenizer_folder = "modules/tokenizers"  # Folder where the tokenizer will be saved
+    # Name of the tokenizer that will be saved
+    tokenizer_name = f"{txt_folder}_tokenizer"
 
     ################## DO NOT MODIFY BELOW ##################
     txt_to_h5(args.txt_path, out_h5_folder, tokenizer_folder, tokenizer_name)

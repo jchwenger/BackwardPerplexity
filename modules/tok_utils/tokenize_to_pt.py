@@ -30,38 +30,41 @@ import torch
 
 from modules import tokenizer
 
-MAX_SIZE = 2*1024*1024*1024
+MAX_SIZE = 2 * 1024 * 1024 * 1024
+
 
 def replace_unusual_terminators(filename):
     """Replace unusual line terminators with standard newline."""
-    LS = '\u2028'
-    PS = '\u2029'
+    LS = "\u2028"
+    PS = "\u2029"
 
-    with open(filename, 'r', encoding='utf-8') as f:
+    with open(filename, "r", encoding="utf-8") as f:
         data = f.read()
 
-        data = data.replace(LS, '\n').replace(PS, '\n')
+        data = data.replace(LS, "\n").replace(PS, "\n")
 
-        with open(filename, 'w', encoding='utf-8') as f:
+        with open(filename, "w", encoding="utf-8") as f:
             f.write(data)
 
+
 def main_replace_unusual(folder_path):
-    print('Replacing terminators ...')
+    print("Replacing terminators ...")
     for filename in tqdm(os.listdir(folder_path)):
-        if filename.endswith('.txt'):
+        if filename.endswith(".txt"):
             filepath = os.path.join(folder_path, filename)
             replace_unusual_terminators(filepath)
 
-                # print(f"Replaced terminators in {filename}")
+            # print(f"Replaced terminators in {filename}")
+
 
 def split_file(filename, split_dir):
     """Split a file into multiple 500MB parts while ensuring split occurs at a newline."""
-    print(f'Splitting {filename}')
+    print(f"Splitting {filename}")
     part_size = MAX_SIZE  # 500MB
     part_num = 1
 
     counter = 0
-    with open(filename, 'rb') as source:
+    with open(filename, "rb") as source:
         while True:
             # Read up to the desired part size
             data = source.read(part_size)
@@ -70,23 +73,25 @@ def split_file(filename, split_dir):
 
             # Check if there's more data after this to determine if we should look for a newline
             while True:
-                buffer = source.peek(1024*4)
+                buffer = source.peek(1024 * 4)
                 if not buffer:
                     break
-                newline_pos = buffer.find(b'\n')
+                newline_pos = buffer.find(b"\n")
                 if newline_pos != -1:
                     data += source.read(newline_pos + 1)  # Only read up to the newline
                     break
-                data += source.read(1024*4)  # Read the entire peeked buffer since no newline was found
-
+                # Read the entire peeked buffer since no newline was found
+                data += source.read(1024 * 4)
 
             # part_file = f"{filename[:-4]}_{part_num:04}.txt"
             part_file = os.path.join(
-                split_dir, os.path.splitext(os.path.basename(filename))[0], f"_{part_num:04}.txt"
+                split_dir,
+                os.path.splitext(os.path.basename(filename))[0],
+                f"_{part_num:04}.txt",
             )
-            with open(part_file, 'wb') as target:
+            with open(part_file, "wb") as target:
                 target.write(data)
-            print(f'Split {part_num*MAX_SIZE/1e9}GB so far')
+            print(f"Split {part_num*MAX_SIZE/1e9}GB so far")
             part_num += 1
 
 
@@ -104,18 +109,16 @@ def main_split_large(folder_path, target_path):
     os.makedirs(target_path, exist_ok=True)
 
     for filename in os.listdir(folder_path):
-        print(f'Scanning and splitting {os.path.join(folder_path,filename)}')
+        print(f"Scanning and splitting {os.path.join(folder_path,filename)}")
 
-        if filename.endswith('.txt'):
+        if filename.endswith(".txt"):
             filepath = os.path.join(folder_path, filename)
-            if os.path.getsize(filepath) > MAX_SIZE+64*1024:
+            if os.path.getsize(filepath) > MAX_SIZE + 64 * 1024:
                 # Split file to target folder
                 split_file(filepath, target_path)
             else:
                 # Copy original file to split folder
                 shutil.copy(filepath, target_path)
-
-
 
 
 def tokenize_folder(folder_path, tokenizer_path=None, no_preprocess=False):
@@ -136,38 +139,70 @@ def tokenize_folder(folder_path, tokenizer_path=None, no_preprocess=False):
             of the files. Default is False. (use True if tokenization
             crashed after sanitization, to not repeat preprocessing)
     """
-    if(tokenizer_path is None):
-        raise ValueError('Tokenizer path required, please specify with -t <tokenizer_path>')
-    if(not os.path.exists(tokenizer_path)):
-        raise FileNotFoundError(f'Tokenizer not found at path {tokenizer_path}. \n \
-                                Tokenizer path should be relative current folder.')
-    else :
+    if tokenizer_path is None:
+        raise ValueError(
+            "Tokenizer path required, please specify with -t <tokenizer_path>"
+        )
+    if not os.path.exists(tokenizer_path):
+        raise FileNotFoundError(
+            f"Tokenizer not found at path {tokenizer_path}. \nTokenizer path should be relative current folder."
+        )
+    else:
         tokenizer_name = os.path.basename(tokenizer_path)
 
-    toki = tokenizer.get_tokenizer(m_path=tokenizer_path,m_name=tokenizer_name)
+    toki = tokenizer.get_tokenizer(m_path=tokenizer_path, m_name=tokenizer_name)
 
     target_path = f"{folder_path}_pt"
 
-    if(not no_preprocess):
+    if not no_preprocess:
         # Only do if no_preprocess is false
-        main_split_large(folder_path, target_path)# First split into MAX-SIZE files
+        main_split_large(folder_path, target_path)  # First split into MAX-SIZE files
         # Then remove strange terminators
         main_replace_unusual(target_path)
 
     # Then run the tokenizer on the MAX_SIZE txt files :
     for txtfile in os.listdir(target_path):
-        if(txtfile.endswith('.txt')):
-            toki.tokenize_txt_file_to_pt_file(os.path.join(target_path,txtfile), f'{os.path.join(target_path,txtfile[:-4])}_tokenized.pt', dtype=torch.int32)
+        if txtfile.endswith(".txt"):
+            toki.tokenize_txt_file_to_pt_file(
+                os.path.join(target_path, txtfile),
+                f"{os.path.join(target_path,txtfile[:-4])}_tokenized.pt",
+                dtype=torch.int32,
+            )
             # Delete the txt files once done, they are backed-up anyway
-            os.remove(os.path.join(target_path,txtfile))
+            os.remove(os.path.join(target_path, txtfile))
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Split large txt files in a directory.")
+    parser = argparse.ArgumentParser(
+        description="Split large txt files in a directory."
+    )
+
     parser.add_argument("folder_path", help="Path to the folder containing txt files.")
-    #Add argument for tokenizer location
-    parser.add_argument("--tokenizer_path","-t", help="Relative path containing saved tokenizer to use. Mandatory parameter.")
-    parser.add_argument("--no_preprocess","-p",help="If specified, does not do the splitting and sanitization of the files", action="store_true")
+
+    # TODO: Add argument for tokenizer location
+    parser.add_argument(
+        "--tokenizer_path", "-t",
+        help="""
+        Relative path containing saved tokenizer to use. Mandatory parameter.
+        """,
+    )
+
+    parser.add_argument(
+        "--no_preprocess", "-p",
+        help="""
+        If specified, does not do the splitting and sanitization of the files
+        """,
+        action="store_true",
+    )
+
     args = parser.parse_args()
 
-    print(f'Tokenizing {args.folder_path} with tokenizer in path : {args.tokenizer_path}')
-    tokenize_folder(args.folder_path,tokenizer_name=args.tokenizer_path,no_preprocess=args.no_preprocess)
+    print(
+        f"Tokenizing {args.folder_path} with tokenizer in path : {args.tokenizer_path}"
+    )
+
+    tokenize_folder(
+        args.folder_path,
+        tokenizer_name=args.tokenizer_path,
+        no_preprocess=args.no_preprocess,
+    )

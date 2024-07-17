@@ -2,13 +2,10 @@
 Full definition of a GPT Language Model.
 """
 
-import math
-
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-from torchenhanced import DevModule
 from torchenhanced import ConfigModule
 
 

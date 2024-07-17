@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--project_name", "-p",
-        default="CodePerplexity"
+        default="CodePerplexity",
         help="""
         Name of the project to log to. Default is 'CodePerplexity'
         """,

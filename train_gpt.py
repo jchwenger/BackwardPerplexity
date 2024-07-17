@@ -49,6 +49,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--project_name", "-p",
+        default="CodePerplexity",
         help="""
         Name of the project to log to. Default is 'CodePerplexity'
         """,
@@ -65,16 +66,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.project_name is None:
-        project_name = "CodePerplexity"
-    else:
-        project_name = args.project_name
-
     train(
         model_name="gpt",
         file_location=args.file_location,
         device=args.device,
         tokenizer_path=args.tokenizer_path,
-        project_name=project_name,
+        project_name=args.project_name,
         step_pickup=args.no_step_pickup,
     )

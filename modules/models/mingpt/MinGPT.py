@@ -236,7 +236,7 @@ class CausalSelfAttention(DevModule):
         super().__init__()
         assert (
             embed_dim % n_heads == 0
-        ), f"Number of heads {n_head} must divide embedding dim {n_embd}"
+        ), f"Number of heads {n_heads} must divide embedding dim {embed_dim}"
         # key, query, value projections for all heads, but in a batch
         self.c_attn = nn.Linear(embed_dim, 3 * embed_dim)
 

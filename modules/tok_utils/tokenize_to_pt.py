@@ -22,7 +22,6 @@ command line arguments.
 
 import os
 import shutil
-import pathlib
 import argparse
 from tqdm import tqdm
 
@@ -63,7 +62,6 @@ def split_file(filename, split_dir):
     part_size = MAX_SIZE  # 500MB
     part_num = 1
 
-    counter = 0
     with open(filename, "rb") as source:
         while True:
             # Read up to the desired part size
@@ -105,7 +103,6 @@ def main_split_large(folder_path, target_path):
         target_path: Path to the folder that will contain the splits (created
             if needed).
     """
-    folder_name = os.path.basename(os.path.normpath(folder_path))
     os.makedirs(target_path, exist_ok=True)
 
     for filename in os.listdir(folder_path):

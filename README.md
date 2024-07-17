@@ -59,7 +59,7 @@ usage: tokenize_to_h5.py [-h] --txt_path TXT_PATH
         file for training.
 
         To make one of those things independently (e.g., only make the custom
-        tokenizer), see modules/tok_utils
+        tokenizer), see modules/tok_utils.
         
 
 options:
@@ -75,7 +75,7 @@ options:
                                                                my_dataset_pt/input_tokenized.pt
                                 2) a tokenizer in modules/tokenizers called after the folder containing
                                 the txt dataset. Example:
-                                    -t my_dataset/input.txt -> modules/tokenizers/code_dataset_tokenizer/
+                                    -t code_dataset/input.txt -> modules/tokenizers/code_dataset_tokenizer/
 ```
 
 Then run the script.
@@ -103,6 +103,8 @@ tokenized = toki.tokenize("Hello, world!") # Tokenize a string
 print(tokenized) # Get a tensor of ints shape [1, seq_len]
 print(toki.detokenize(tokenized)) # Detokenize a tensor of ints, prints "Hello, world!"
 ```
+
+Note: the scripts in `modules/tok_utils/` can, to some degree, be run independently, provided the path to the module folder is added to the PYTHONPATH: `PYTHONPATH="/path/to/modules:$PYTHONPATH" python modules/tok_utils/pt_to_h5.py --help`.
 
 ## Training
 
